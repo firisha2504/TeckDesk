@@ -67,9 +67,7 @@ export const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Total Users"
-          value={metrics?.totalUsers ?? 48}
-          trend="↑ 6%"
-          trendDirection="up"
+          value={metrics?.totalUsers ?? 0}
           icon={Users}
           iconColor="text-blue-500"
           iconBg="bg-blue-500/10"
@@ -78,7 +76,7 @@ export const AdminDashboard = () => {
 
         <StatCard
           title="Total Organizations"
-          value={metrics?.totalOrganizations ?? 3}
+          value={metrics?.totalOrganizations ?? 0}
           icon={Building}
           iconColor="text-amber-500"
           iconBg="bg-amber-500/10"
@@ -87,9 +85,7 @@ export const AdminDashboard = () => {
 
         <StatCard
           title="Open Tickets"
-          value={metrics?.openTickets ?? 32}
-          trend="↓ 8%"
-          trendDirection="up"
+          value={metrics?.openTickets ?? 0}
           icon={Ticket}
           iconColor="text-cyan-500"
           iconBg="bg-cyan-500/10"
@@ -98,7 +94,7 @@ export const AdminDashboard = () => {
 
         <StatCard
           title="System Health"
-          value={metrics?.systemUptime ?? '99.9%'}
+          value={metrics?.systemUptime ?? 'Active'}
           trend="Optimal"
           trendDirection="up"
           icon={Server}

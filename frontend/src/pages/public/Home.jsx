@@ -353,7 +353,7 @@ export const Home = () => {
             to="/login"
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-white dark:bg-navy-900 text-slate-800 dark:text-slate-200 font-semibold text-base border border-slate-300 dark:border-navy-700 hover:bg-slate-50 dark:hover:bg-navy-850 transition-colors"
           >
-            Access Demo Accounts
+            Sign In to Portal
           </Link>
         </div>
       </section>

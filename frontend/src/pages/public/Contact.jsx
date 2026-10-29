@@ -109,7 +109,7 @@ export const Contact = () => {
                   Inquiry Received
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                  Thank you, <strong>{name}</strong>. Your inquiry has been acknowledged in the local frontend state demonstration. For active technical incidents, please submit a ticket via your support dashboard.
+                  Thank you, <strong>{name}</strong>. Your inquiry has been received. Our team will review your message and follow up shortly.
                 </p>
                 <div className="pt-2">
                   <button
@@ -135,7 +135,7 @@ export const Contact = () => {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Hana Bekele"
+                    placeholder="e.g. Jane Doe"
                     leftIcon={User}
                   />
                   <Input
@@ -144,7 +144,7 @@ export const Contact = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. hana@company.com"
+                    placeholder="name@company.com"
                     leftIcon={Mail}
                   />
                 </div>

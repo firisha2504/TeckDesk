@@ -40,19 +40,15 @@
 
 ---
 
-## 🔑 Default Credentials (Seeded Demo Accounts)
+## 🔑 User Authentication & Account Access
 
-All accounts are pre-configured with the default password: `Password123!`
+TechDesk supports role-based access control (RBAC) across four core user tiers:
+- **Employee**: Incident creation, ticket tracking, and direct technician messaging.
+- **Technician**: Workload assignment queue, incident triage, SLA countdown monitoring, and resolution workflows.
+- **Manager**: Departmental throughput oversight, team assignments, SLA policy configuration, and CSV analytics export.
+- **Administrator**: Tenant governance, organization role provisioning, user management, and audit log inspection.
 
-| Role | Name | Email | Password | Primary Capabilities |
-| :--- | :--- | :--- | :--- | :--- |
-| **Administrator** | Firomsa Abdi | `admin@techdesk.com` | `Password123!` | System settings, user roles, audit trail |
-| **Manager** | Abebe Kebede | `manager@techdesk.com` | `Password123!` | Team roster, SLA policies, analytics, CSV export |
-| **Technician** | Tadesse Gebre | `tadesse@techdesk.com` | `Password123!` | Hardware & Network triage, internal notes |
-| **Technician** | Selamawit Abate | `selamawit@techdesk.com` | `Password123!` | Software, Cloud & Security incidents |
-| **Employee** | Hana Bekele | `employee@techdesk.com` | `Password123!` | Create tickets, view own issues, reply |
-
-> *Tip: The Login page includes one-click demo login buttons for each role for instant testing.*
+New users can register directly via the registration portal (`/register`). Manager and Administrator roles are provisioned by an organization administrator through the User Management panel (`/users`).
 
 ---
 
@@ -60,7 +56,7 @@ All accounts are pre-configured with the default password: `Password123!`
 
 ### Option A: Local Development
 
-#### 1. Start MongoDB & Seed Demo Data
+#### 1. Start MongoDB & Initialize Workspace
 ```bash
 # Start local MongoDB daemon
 mkdir -p backend/data/db

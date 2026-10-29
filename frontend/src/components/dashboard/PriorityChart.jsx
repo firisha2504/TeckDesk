@@ -24,6 +24,28 @@ export const PriorityChart = ({
 
   const total = chartData.reduce((acc, curr) => acc + curr.value, 0);
 
+  if (total === 0) {
+    return (
+      <div className="p-5 rounded-2xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm flex flex-col justify-between min-h-[300px]">
+        <div className="mb-2">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+          <p className="text-xs text-slate-400">Incident urgency distribution</p>
+        </div>
+        <div className="h-48 w-full flex flex-col items-center justify-center text-center p-4">
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            No incidents recorded yet
+          </p>
+          <p className="text-[11px] text-slate-400 max-w-xs mt-1">
+            Priority distribution will display automatically once tickets are created.
+          </p>
+        </div>
+        <div className="pt-2 border-t border-slate-100 dark:border-navy-800/80 text-[11px] text-slate-400 text-center">
+          0 incidents logged
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-5 rounded-2xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm flex flex-col justify-between">
       <div className="mb-2">

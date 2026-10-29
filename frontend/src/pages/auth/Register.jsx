@@ -13,7 +13,7 @@ export const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [organizationName, setOrganizationName] = useState('TechDesk Solutions');
+  const [organizationName, setOrganizationName] = useState('');
   const [role, setRole] = useState('employee');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ export const Register = () => {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Hana Bekele"
+            placeholder="e.g. Jane Doe"
             leftIcon={User}
           />
 
@@ -97,7 +97,7 @@ export const Register = () => {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="e.g. hana@techdesk.com"
+            placeholder="name@company.com"
             leftIcon={Mail}
           />
 
@@ -127,7 +127,7 @@ export const Register = () => {
             required
             value={organizationName}
             onChange={(e) => setOrganizationName(e.target.value)}
-            placeholder="e.g. TechDesk Solutions"
+            placeholder="e.g. Acme Corporation"
             leftIcon={Building}
           />
 

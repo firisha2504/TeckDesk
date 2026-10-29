@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Headphones, AlertCircle, ArrowRight, ArrowLeft, Shield, User, Wrench, Briefcase } from 'lucide-react';
+import { Mail, Lock, Headphones, AlertCircle, ArrowRight, ArrowLeft, Shield, Clock, Briefcase } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { Button } from '../../components/common/Button.jsx';
@@ -28,11 +28,6 @@ export const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = (demoEmail) => {
-    setEmail(demoEmail);
-    setPassword('Password123!');
   };
 
   return (
@@ -73,43 +68,18 @@ export const Login = () => {
             </p>
           </div>
 
-          <div className="relative z-10 pt-6 border-t border-slate-700/50">
-            <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">
-              Fast Demo Sign-In
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('employee@techdesk.com')}
-                className="flex items-center gap-1.5 p-2 rounded-lg bg-navy-800/80 hover:bg-navy-700 text-slate-300 hover:text-white transition-colors border border-navy-700 text-left"
-              >
-                <User className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span className="truncate">Employee</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('tadesse@techdesk.com')}
-                className="flex items-center gap-1.5 p-2 rounded-lg bg-navy-800/80 hover:bg-navy-700 text-slate-300 hover:text-white transition-colors border border-navy-700 text-left"
-              >
-                <Wrench className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span className="truncate">Technician</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('manager@techdesk.com')}
-                className="flex items-center gap-1.5 p-2 rounded-lg bg-navy-800/80 hover:bg-navy-700 text-slate-300 hover:text-white transition-colors border border-navy-700 text-left"
-              >
-                <Briefcase className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span className="truncate">Manager</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin@techdesk.com')}
-                className="flex items-center gap-1.5 p-2 rounded-lg bg-navy-800/80 hover:bg-navy-700 text-slate-300 hover:text-white transition-colors border border-navy-700 text-left"
-              >
-                <Shield className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <span className="truncate">Admin</span>
-              </button>
+          <div className="relative z-10 pt-6 border-t border-slate-700/50 space-y-3">
+            <div className="flex items-center gap-2.5 text-xs text-slate-300">
+              <Shield className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>Enterprise-grade role-based access control</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-slate-300">
+              <Clock className="w-4 h-4 text-blue-400 shrink-0" />
+              <span>Automated SLA tracking & proactive escalation</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-slate-300">
+              <Briefcase className="w-4 h-4 text-purple-400 shrink-0" />
+              <span>Intelligent skill-based technician triage</span>
             </div>
           </div>
         </div>
@@ -139,7 +109,7 @@ export const Login = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. employee@techdesk.com"
+              placeholder="name@company.com"
               leftIcon={Mail}
             />
 

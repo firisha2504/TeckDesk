@@ -79,9 +79,7 @@ export const AnalyticsDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Total Tickets"
-          value={data?.totalTickets ?? 124}
-          trend="↑ 12%"
-          trendDirection="up"
+          value={data?.totalTickets ?? 0}
           icon={Ticket}
           iconColor="text-blue-500"
           iconBg="bg-blue-500/10"
@@ -89,9 +87,7 @@ export const AnalyticsDashboard = () => {
 
         <StatCard
           title="Avg. Response Time"
-          value="1.8h"
-          trend="↓ 20%"
-          trendDirection="up"
+          value={data?.avgResponseTime || 'N/A'}
           icon={Clock}
           iconColor="text-cyan-500"
           iconBg="bg-cyan-500/10"
@@ -99,9 +95,7 @@ export const AnalyticsDashboard = () => {
 
         <StatCard
           title="Avg. Resolution Time"
-          value={data?.avgResolutionTime ?? '4.2h'}
-          trend="↓ 14%"
-          trendDirection="up"
+          value={data?.avgResolutionTime || 'N/A'}
           icon={Clock}
           iconColor="text-purple-500"
           iconBg="bg-purple-500/10"
@@ -109,9 +103,7 @@ export const AnalyticsDashboard = () => {
 
         <StatCard
           title="SLA Compliance"
-          value={data?.slaComplianceRate ?? '96%'}
-          trend="↑ 4%"
-          trendDirection="up"
+          value={data?.slaComplianceRate || '100%'}
           icon={ShieldCheck}
           iconColor="text-emerald-500"
           iconBg="bg-emerald-500/10"
@@ -121,7 +113,7 @@ export const AnalyticsDashboard = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Tickets by Category */}
-        <div className="p-5 rounded-2xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm flex flex-col justify-between">
+        <div className="p-5 rounded-2xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm flex flex-col justify-between min-h-[300px]">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Tickets by Category
@@ -129,46 +121,54 @@ export const AnalyticsDashboard = () => {
             <p className="text-xs text-slate-400">Distribution across IT domains</p>
           </div>
 
-          <div className="h-56 w-full flex items-center justify-center my-3">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? '#0B132B' : '#FFFFFF',
-                    borderColor: isDark ? '#1E356D' : '#E2E8F0',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    color: isDark ? '#F8FAFC' : '#0F172A',
-                  }}
-                />
-                <Pie
-                  data={categoryChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {categoryChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke={isDark ? '#0B132B' : '#FFFFFF'} strokeWidth={2} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-navy-800 text-xs">
-            {categoryChartData.map((c) => (
-              <div key={c.name} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-navy-850">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                  <span className="truncate text-slate-600 dark:text-slate-300 font-medium">{c.name}</span>
-                </div>
-                <span className="font-bold text-slate-900 dark:text-slate-100 ml-1">{c.value}</span>
+          {categoryChartData.length === 0 ? (
+            <div className="h-56 w-full flex flex-col items-center justify-center text-center p-4">
+              <p className="text-xs text-slate-400">No ticket category data recorded yet</p>
+            </div>
+          ) : (
+            <>
+              <div className="h-56 w-full flex items-center justify-center my-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: isDark ? '#0B132B' : '#FFFFFF',
+                        borderColor: isDark ? '#1E356D' : '#E2E8F0',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        color: isDark ? '#F8FAFC' : '#0F172A',
+                      }}
+                    />
+                    <Pie
+                      data={categoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke={isDark ? '#0B132B' : '#FFFFFF'} strokeWidth={2} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-navy-800 text-xs">
+                {categoryChartData.map((c) => (
+                  <div key={c.name} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-navy-850">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                      <span className="truncate text-slate-600 dark:text-slate-300 font-medium">{c.name}</span>
+                    </div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 ml-1">{c.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Priority Breakdown */}

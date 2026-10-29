@@ -59,7 +59,7 @@ async function seedDatabase() {
     });
 
     // 3. Create Users
-    const defaultPassword = 'Password123!';
+    const defaultPassword = process.env.INITIAL_ADMIN_PASSWORD || 'Password123!';
 
     const admin = await User.create({
       name: 'Firomsa Abdi',
@@ -462,8 +462,8 @@ async function seedDatabase() {
     ]);
 
     logger.info('========================================================');
-    logger.info('TechDesk database seeded successfully!');
-    logger.info('Default Credentials (Password: Password123!):');
+    logger.info('TechDesk database initialized successfully!');
+    logger.info('Provisioned Accounts:');
     logger.info('  Admin:       admin@techdesk.com');
     logger.info('  Manager:     manager@techdesk.com');
     logger.info('  Technician:  tadesse@techdesk.com');

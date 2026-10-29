@@ -186,14 +186,14 @@ export const Features = () => {
           Experience TechDesk in Action
         </h3>
         <p className="text-sm text-slate-300 max-w-xl mx-auto">
-          Sign in using our pre-configured role accounts or create a new organization to see how TechDesk transforms support delivery.
+          Sign in with your organization account or create a new profile to see how TechDesk transforms support delivery.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/login"
             className="w-full sm:w-auto px-7 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-sm shadow-lg transition-transform hover:scale-105"
           >
-            Sign In with Demo Accounts
+            Sign In to Portal
           </Link>
           <Link
             to="/register"

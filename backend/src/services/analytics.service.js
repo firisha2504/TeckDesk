@@ -114,7 +114,7 @@ export const analyticsService = {
 
     const avgResolutionHours = avgResolutionAgg[0]?.avgHours
       ? Number(avgResolutionAgg[0].avgHours.toFixed(1))
-      : 3.2;
+      : 0;
 
     const assignedTickets = await Ticket.find({
       assignee: userObjId,
@@ -152,6 +152,7 @@ export const analyticsService = {
       categoryCounts,
       slaComplianceStats,
       avgResolutionAgg,
+      avgResponseAgg,
       technicianPerformance,
       trends,
     ] = await Promise.all([
@@ -198,6 +199,23 @@ export const analyticsService = {
           $project: {
             durationHours: {
               $divide: [{ $subtract: ['$sla.resolvedAt', '$createdAt'] }, 1000 * 60 * 60],
+            },
+          },
+        },
+        { $group: { _id: null, avgHours: { $avg: '$durationHours' } } },
+      ]),
+      // Average first response time in hours
+      Ticket.aggregate([
+        {
+          $match: {
+            organization: orgId,
+            'sla.firstResponseAt': { $exists: true },
+          },
+        },
+        {
+          $project: {
+            durationHours: {
+              $divide: [{ $subtract: ['$sla.firstResponseAt', '$createdAt'] }, 1000 * 60 * 60],
             },
           },
         },
@@ -269,7 +287,7 @@ export const analyticsService = {
                     0,
                   ],
                 },
-                95,
+                100,
               ],
             },
           },
@@ -312,16 +330,21 @@ export const analyticsService = {
     const breachedCount = slaComplianceStats[0]?.breachedCount || 0;
     const slaComplianceRate = totalResolved > 0
       ? Math.round(((totalResolved - breachedCount) / totalResolved) * 100)
-      : 96;
+      : 100;
 
     const avgResolutionHours = avgResolutionAgg[0]?.avgHours
       ? Number(avgResolutionAgg[0].avgHours.toFixed(1))
-      : 4.2;
+      : 0;
+
+    const avgResponseHours = avgResponseAgg[0]?.avgHours
+      ? Number(avgResponseAgg[0].avgHours.toFixed(1))
+      : 0;
 
     return {
       totalTickets,
       openTickets,
-      avgResolutionTime: `${avgResolutionHours}h`,
+      avgResponseTime: avgResponseHours > 0 ? `${avgResponseHours}h` : 'N/A',
+      avgResolutionTime: avgResolutionHours > 0 ? `${avgResolutionHours}h` : 'N/A',
       slaComplianceRate: `${slaComplianceRate}%`,
       priorityBreakdown: priorityMap,
       categoryBreakdown: categoryMap,
@@ -367,11 +390,16 @@ export const analyticsService = {
         ]),
       ]);
 
+    const uptimeSec = Math.floor(process.uptime());
+    const uptimeHours = Math.floor(uptimeSec / 3600);
+    const uptimeMins = Math.floor((uptimeSec % 3600) / 60);
+    const systemUptime = uptimeHours > 0 ? `${uptimeHours}h ${uptimeMins}m` : `${uptimeMins}m`;
+
     return {
       totalUsers,
       totalOrganizations,
       openTickets,
-      systemUptime: '99.9%',
+      systemUptime,
       roleBreakdown,
       recentAuditLogs,
       trends,

@@ -88,12 +88,10 @@ export const TechnicianDashboard = () => {
 
         <StatCard
           title="Avg. Resolution Time"
-          value={`${metrics?.avgResolutionHours ?? 3.2}h`}
+          value={metrics?.avgResolutionHours > 0 ? `${metrics.avgResolutionHours}h` : 'N/A'}
           icon={CheckCircle2}
           iconColor="text-emerald-500"
           iconBg="bg-emerald-500/10"
-          trend="↓ 20%"
-          trendDirection="up"
           description="Personal turnaround benchmark"
         />
       </div>

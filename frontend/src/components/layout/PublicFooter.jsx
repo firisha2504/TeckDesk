@@ -77,7 +77,7 @@ export const PublicFooter = () => {
               </li>
               <li>
                 <Link to="/login" className="hover:text-cyan-500 transition-colors">
-                  Demo Fast Sign-In
+                  Sign In to Portal
                 </Link>
               </li>
               <li>
