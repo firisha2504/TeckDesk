@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../src/app.js';
 import { connectDatabase, disconnectDatabase } from '../src/config/database.js';
+import { Organization } from '../src/models/Organization.js';
+import { User } from '../src/models/User.js';
+import { Ticket } from '../src/models/Ticket.js';
 
 describe('Ticket Lifecycle API Tests', () => {
   let employeeToken = '';
@@ -37,6 +40,12 @@ describe('Ticket Lifecycle API Tests', () => {
   });
 
   afterAll(async () => {
+    const org = await Organization.findOne({ name: 'Ticket Lifecycle Org' });
+    if (org) {
+      await User.deleteMany({ organization: org._id });
+      await Ticket.deleteMany({ organization: org._id });
+      await Organization.deleteOne({ _id: org._id });
+    }
     await disconnectDatabase();
   });
 

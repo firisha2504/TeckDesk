@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../src/app.js';
 import { connectDatabase, disconnectDatabase } from '../src/config/database.js';
+import { Organization } from '../src/models/Organization.js';
+import { User } from '../src/models/User.js';
+import { Ticket } from '../src/models/Ticket.js';
 
 describe('Permissions & Tenant Isolation API Tests', () => {
   let orgAToken = '';
@@ -49,6 +52,13 @@ describe('Permissions & Tenant Isolation API Tests', () => {
   });
 
   afterAll(async () => {
+    const orgs = await Organization.find({ name: { $in: ['Alpha Corporation', 'Beta Enterprises'] } });
+    const orgIds = orgs.map((o) => o._id);
+    if (orgIds.length > 0) {
+      await User.deleteMany({ organization: { $in: orgIds } });
+      await Ticket.deleteMany({ organization: { $in: orgIds } });
+      await Organization.deleteMany({ _id: { $in: orgIds } });
+    }
     await disconnectDatabase();
   });
 

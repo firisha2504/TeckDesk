@@ -11,6 +11,11 @@ describe('Authentication API Tests', () => {
   });
 
   afterAll(async () => {
+    const org = await Organization.findOne({ name: testUser.organizationName });
+    if (org) {
+      await User.deleteMany({ organization: org._id });
+      await Organization.deleteOne({ _id: org._id });
+    }
     await disconnectDatabase();
   });
 

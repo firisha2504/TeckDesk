@@ -28,6 +28,11 @@ describe('SLA & Auto-Assignment Logic Tests', () => {
   });
 
   afterAll(async () => {
+    const orgId = organization?._id || organization;
+    if (orgId) {
+      await User.deleteMany({ organization: orgId });
+      await Organization.deleteOne({ _id: orgId });
+    }
     await disconnectDatabase();
   });
 
