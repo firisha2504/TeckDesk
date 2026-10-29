@@ -12,14 +12,29 @@ export const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [organizationName, setOrganizationName] = useState('TechDesk Solutions');
   const [role, setRole] = useState('employee');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (password.length < 6) {
+      return setError('Password must be at least 6 characters long.');
+    }
+
+    if (password !== confirmPassword) {
+      return setError('Passwords do not match. Please verify both password fields.');
+    }
+
+    if (!agreeTerms) {
+      return setError('You must accept the Terms and Conditions to create an account.');
+    }
+
     setLoading(true);
 
     try {
@@ -86,6 +101,16 @@ export const Register = () => {
           />
 
           <Input
+            label="Confirm Password"
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="••••••••••••"
+            leftIcon={Lock}
+          />
+
+          <Input
             label="Organization Name"
             type="text"
             required
@@ -106,9 +131,32 @@ export const Register = () => {
             >
               <option value="employee">Employee (Submit & track tickets)</option>
               <option value="technician">Technician (Resolve assigned incidents)</option>
-              <option value="manager">Manager (Oversee team, SLA & tickets)</option>
-              <option value="admin">Administrator (System config & policies)</option>
             </select>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Manager and Administrator roles require elevated invitation or administrator provisioning.
+            </p>
+          </div>
+
+          <div className="flex items-start gap-2 pt-1 text-xs text-slate-600 dark:text-slate-400">
+            <input
+              type="checkbox"
+              id="agreeTerms"
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
+              required
+              className="mt-0.5 rounded border-slate-300 dark:border-navy-700 text-cyan-500 focus:ring-cyan-500"
+            />
+            <label htmlFor="agreeTerms" className="cursor-pointer">
+              I agree to the{' '}
+              <Link to="/terms" className="text-cyan-600 dark:text-cyan-400 hover:underline">
+                Terms and Conditions
+              </Link>{' '}
+              and{' '}
+              <Link to="/privacy" className="text-cyan-600 dark:text-cyan-400 hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </label>
           </div>
 
           <Button

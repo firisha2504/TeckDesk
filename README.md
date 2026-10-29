@@ -21,6 +21,8 @@
   - Live ticket updates, comment streams, status changes, and in-app push notification alerts with room-scoped security.
 - **Enterprise Aesthetics**:
   - Dark navy (`#0B132B`, `#0F172A`) and crisp light themes with responsive mobile navigation dock, glowing cyan/blue primary accents, and Recharts interactive graphs.
+- **Public Experience & Corporate Governance**:
+  - Landing page (`/`), Deep-dive features page (`/features`), Mission & methodology (`/about`), Client-validated contact inquiry portal (`/contact`), Structured data privacy policy (`/privacy`), and Platform terms & conditions (`/terms`).
 - **Robust Security**:
   - HTTP-only cookie JWT auth, bcrypt password hashing (10 rounds), Zod payload validation, Helmet security headers, rate limiting, and NoSQL injection sanitization.
 

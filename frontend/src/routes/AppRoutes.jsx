@@ -2,7 +2,16 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { AppLayout } from '../components/layout/AppLayout.jsx';
+import { PublicLayout } from '../components/layout/PublicLayout.jsx';
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton.jsx';
+
+// Public Pages
+import { Home } from '../pages/public/Home.jsx';
+import { Features } from '../pages/public/Features.jsx';
+import { About } from '../pages/public/About.jsx';
+import { Contact } from '../pages/public/Contact.jsx';
+import { Privacy } from '../pages/public/Privacy.jsx';
+import { Terms } from '../pages/public/Terms.jsx';
 
 // Auth Pages
 import { Login } from '../pages/auth/Login.jsx';
@@ -21,7 +30,9 @@ import { TicketList } from '../pages/tickets/TicketList.jsx';
 import { TicketDetail } from '../pages/tickets/TicketDetail.jsx';
 import { CreateTicket } from '../pages/employee/CreateTicket.jsx';
 import { MyTickets } from '../pages/employee/MyTickets.jsx';
+import { EmployeeTicketDetail } from '../pages/employee/EmployeeTicketDetail.jsx';
 import { AssignedTickets } from '../pages/technician/AssignedTickets.jsx';
+import { TechnicianTicketDetail } from '../pages/technician/TechnicianTicketDetail.jsx';
 
 // Management & Admin
 import { TeamManagement } from '../pages/manager/TeamManagement.jsx';
@@ -66,7 +77,7 @@ const RoleRoute = ({ allowedRoles = [], children }) => {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/access-denied" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;
@@ -92,14 +103,25 @@ const DashboardDispatcher = () => {
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Auth Routes */}
+      {/* 1. Public Marketing & Legal Pages */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+      </Route>
+
+      {/* 2. Public Authentication Pages */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/unauthorized" element={<AccessDenied />} />
       <Route path="/access-denied" element={<AccessDenied />} />
 
-      {/* Protected Layout Routes */}
+      {/* 3. Protected Authenticated Layout */}
       <Route
         element={
           <ProtectedRoute>
@@ -107,10 +129,148 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Dynamic Role Dashboard */}
         <Route path="/dashboard" element={<DashboardDispatcher />} />
 
-        {/* Tickets */}
+        {/* Section 6: Employee Pages */}
+        <Route
+          path="/employee/dashboard"
+          element={
+            <RoleRoute allowedRoles={['employee', 'admin']}>
+              <EmployeeDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/employee/tickets/new"
+          element={
+            <RoleRoute allowedRoles={['employee', 'admin']}>
+              <CreateTicket />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/employee/tickets"
+          element={
+            <RoleRoute allowedRoles={['employee', 'admin']}>
+              <MyTickets />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/employee/tickets/:id"
+          element={
+            <RoleRoute allowedRoles={['employee', 'admin']}>
+              <EmployeeTicketDetail />
+            </RoleRoute>
+          }
+        />
+        <Route path="/employee/profile" element={<ProfileSettings />} />
+
+        {/* Section 7: Technician Pages */}
+        <Route
+          path="/technician/dashboard"
+          element={
+            <RoleRoute allowedRoles={['technician', 'admin']}>
+              <TechnicianDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/technician/tickets"
+          element={
+            <RoleRoute allowedRoles={['technician', 'admin', 'manager']}>
+              <AssignedTickets />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/technician/tickets/:id"
+          element={
+            <RoleRoute allowedRoles={['technician', 'admin', 'manager']}>
+              <TechnicianTicketDetail />
+            </RoleRoute>
+          }
+        />
+        <Route path="/technician/profile" element={<ProfileSettings />} />
+
+        {/* Section 8: Manager Pages */}
+        <Route
+          path="/manager/dashboard"
+          element={
+            <RoleRoute allowedRoles={['manager', 'admin']}>
+              <ManagerDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/manager/tickets"
+          element={
+            <RoleRoute allowedRoles={['manager', 'admin']}>
+              <TicketList />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/manager/technicians"
+          element={
+            <RoleRoute allowedRoles={['manager', 'admin']}>
+              <TeamManagement />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/manager/reports"
+          element={
+            <RoleRoute allowedRoles={['manager', 'admin']}>
+              <AnalyticsDashboard />
+            </RoleRoute>
+          }
+        />
+
+        {/* Section 9: Administrator Pages */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <RoleRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <RoleRoute allowedRoles={['admin']}>
+              <UserManagement />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <RoleRoute allowedRoles={['admin']}>
+              <OrganizationSettings />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-logs"
+          element={
+            <RoleRoute allowedRoles={['admin']}>
+              <AuditLogs />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <RoleRoute allowedRoles={['admin']}>
+              <NotificationsPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* Section 10: Shared Routes and Existing Aliases */}
         <Route path="/tickets" element={<TicketList />} />
         <Route path="/tickets/my" element={<MyTickets />} />
         <Route
@@ -124,7 +284,6 @@ export const AppRoutes = () => {
         <Route path="/tickets/create" element={<CreateTicket />} />
         <Route path="/tickets/:id" element={<TicketDetail />} />
 
-        {/* Manager & Admin Features */}
         <Route
           path="/teams"
           element={
@@ -158,7 +317,6 @@ export const AppRoutes = () => {
           }
         />
 
-        {/* Admin Only Features */}
         <Route
           path="/users"
           element={
@@ -183,17 +341,9 @@ export const AppRoutes = () => {
             </RoleRoute>
           }
         />
-        <Route
-          path="/admin/audit-logs"
-          element={
-            <RoleRoute allowedRoles={['admin']}>
-              <AuditLogs />
-            </RoleRoute>
-          }
-        />
 
-        {/* User Notifications and Settings */}
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/profile" element={<ProfileSettings />} />
         <Route path="/settings/profile" element={<ProfileSettings />} />
         <Route path="/settings/appearance" element={<AppearanceSettings />} />
       </Route>
