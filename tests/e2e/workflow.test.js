@@ -30,4 +30,21 @@ describe('TechDesk E2E System Health & Workflow Verification', () => {
       expect(html).toContain('TechDesk');
     }
   });
+
+  it('should verify Login and Register components define clear Back to Home navigation to /', async () => {
+    // Verify file content of Login and Register components includes Link to="/" with Back to Home
+    const fs = await import('fs');
+    const loginCode = fs.readFileSync('frontend/src/pages/auth/Login.jsx', 'utf-8');
+    const registerCode = fs.readFileSync('frontend/src/pages/auth/Register.jsx', 'utf-8');
+
+    // Login verification
+    expect(loginCode).toContain('to="/"');
+    expect(loginCode).toContain('Back to Home');
+    expect(loginCode).toContain('ArrowLeft');
+
+    // Register verification
+    expect(registerCode).toContain('to="/"');
+    expect(registerCode).toContain('Back to Home');
+    expect(registerCode).toContain('ArrowLeft');
+  });
 });

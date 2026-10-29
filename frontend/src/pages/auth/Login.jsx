@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Headphones, AlertCircle, ArrowRight, Shield, User, Wrench, Briefcase } from 'lucide-react';
+import { Mail, Lock, Headphones, AlertCircle, ArrowRight, ArrowLeft, Shield, User, Wrench, Briefcase } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { Button } from '../../components/common/Button.jsx';
@@ -36,7 +36,18 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-navy-950 transition-colors">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-slate-50 dark:bg-navy-950 transition-colors">
+      {/* Top Navigation - Back to Home */}
+      <div className="w-full max-w-4xl mb-3 flex items-center justify-between">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors px-3 py-1.5 rounded-xl hover:bg-slate-200/50 dark:hover:bg-navy-900/60"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Home</span>
+        </Link>
+      </div>
+
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-3xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-2xl overflow-hidden">
         {/* Left Brand Panel matching reference design */}
         <div className="relative p-8 md:p-12 bg-gradient-to-br from-navy-900 via-navy-850 to-blue-950 text-white flex flex-col justify-between overflow-hidden">
