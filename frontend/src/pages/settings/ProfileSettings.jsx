@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { User, Mail, Lock, CheckCircle2, Save, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { User, Mail, Lock, CheckCircle2, Save, Camera, UploadCloud, X, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { Button } from '../../components/common/Button.jsx';
 
 export const ProfileSettings = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, uploadAvatar, removeAvatar } = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
@@ -16,6 +16,119 @@ export const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Local Computer Photo Upload State
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Sync avatar with auth user updates
+  useEffect(() => {
+    if (user?.avatar !== undefined) {
+      setAvatar(user.avatar || '');
+    }
+  }, [user?.avatar]);
+
+  // Clean up object URL on unmount or when preview changes
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setMessage('');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+      setError('Unsupported file format. Please select a JPG, JPEG, PNG, or WebP image.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image file size must not exceed 5 MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setPreviewUrl(objectUrl);
+  };
+
+  const handleCancelSelection = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSavePhoto = async () => {
+    if (!selectedFile || uploading) return;
+
+    setUploading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', selectedFile);
+
+      const updatedUser = await uploadAvatar(formData);
+      setAvatar(updatedUser.avatar || '');
+      setMessage('Profile picture updated successfully.');
+
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(null);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to upload profile picture.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (uploading) return;
+
+    setUploading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await removeAvatar();
+      setAvatar('');
+      setMessage('Profile picture removed successfully.');
+    } catch (err) {
+      setError(err.message || 'Failed to remove profile picture.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,22 +184,136 @@ export const ProfileSettings = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="p-6 rounded-3xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm space-y-4">
-          <div className="flex items-center gap-4 mb-4">
-            {avatar ? (
-              <img src={avatar} alt={name} className="w-16 h-16 rounded-full object-cover ring-2 ring-blue-500/30" />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xl">
-                {name?.charAt(0) || 'U'}
+      {/* Profile Photo Management Card */}
+      <div className="p-6 rounded-3xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm space-y-4">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <Camera className="w-4 h-4 text-cyan-500" />
+          Profile Picture
+        </h3>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-4 rounded-2xl bg-slate-50 dark:bg-navy-950/70 border border-slate-200/80 dark:border-navy-800">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="New Preview"
+                  className="w-18 h-18 sm:w-20 sm:h-20 rounded-full object-cover ring-4 ring-cyan-500/50 shadow-lg"
+                />
+              ) : avatar ? (
+                <img
+                  src={avatar}
+                  alt={name}
+                  className="w-18 h-18 sm:w-20 sm:h-20 rounded-full object-cover ring-2 ring-blue-500/30 shadow-md"
+                />
+              ) : (
+                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 text-white font-bold flex items-center justify-center text-2xl shadow-md">
+                  {name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+              )}
+
+              {previewUrl && (
+                <span className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-500 text-navy-950 shadow">
+                  Preview
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">{user?.name}</h4>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 dark:text-cyan-400 border border-blue-500/20 capitalize shrink-0">
+                  {user?.role}
+                </span>
               </div>
-            )}
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{user?.name}</h4>
-              <p className="text-xs text-slate-400 capitalize">{user?.role} • {user?.organization?.name || 'TechDesk'}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {user?.organization?.name || 'TechDesk Support Workspace'}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                JPG, JPEG, PNG, or WebP. Max size: 5 MB.
+              </p>
             </div>
           </div>
 
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+
+            {previewUrl ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={UploadCloud}
+                  isLoading={uploading}
+                  disabled={uploading}
+                  onClick={handleSavePhoto}
+                >
+                  Save Photo
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={X}
+                  disabled={uploading}
+                  onClick={handleCancelSelection}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  leftIcon={Camera}
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Change Photo
+                </Button>
+                {avatar && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={Trash2}
+                    disabled={uploading}
+                    onClick={handleRemovePhoto}
+                    className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Selected File Feedback Banner */}
+        {selectedFile && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-600 dark:text-cyan-400">
+            <span className="truncate">
+              Selected: <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(1)} KB)
+            </span>
+            <span className="font-semibold text-[11px] uppercase tracking-wider shrink-0 ml-2">
+              Ready to Save
+            </span>
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-6 rounded-3xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 shadow-sm space-y-4">
           <Input
             label="Full Name"
             type="text"
@@ -106,11 +333,12 @@ export const ProfileSettings = () => {
           />
 
           <Input
-            label="Avatar Image URL"
+            label="Or Custom Avatar Image URL"
             type="url"
             value={avatar}
             onChange={(e) => setAvatar(e.target.value)}
             placeholder="https://..."
+            helperText="Supports direct local file upload above or an external HTTPS photo URL."
           />
 
           {['technician', 'manager'].includes(user?.role) && (

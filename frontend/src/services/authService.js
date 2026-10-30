@@ -44,4 +44,13 @@ export const authService = {
   updateProfile: async (profileData) => {
     return api.patch('/users/profile', profileData);
   },
+
+  uploadAvatar: async (formData) => {
+    return api.upload('/users/avatar', formData);
+  },
+
+  removeAvatar: async () => {
+    return api.delete('/users/avatar');
+  },
 };
+

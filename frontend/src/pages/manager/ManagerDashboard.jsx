@@ -7,11 +7,14 @@ import { StatCard } from '../../components/dashboard/StatCard.jsx';
 import { PriorityChart } from '../../components/dashboard/PriorityChart.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 
 export const ManagerDashboard = () => {
+  const { showError } = useModal();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -28,6 +31,21 @@ export const ManagerDashboard = () => {
     loadData();
   }, []);
 
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await analyticsService.exportCSV();
+    } catch (err) {
+      showError({
+        title: 'Export Failed',
+        message: 'Failed to export CSV: ' + (err.response?.data?.message || err.message),
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -36,14 +54,6 @@ export const ManagerDashboard = () => {
       </div>
     );
   }
-
-  const handleExport = async () => {
-    try {
-      await analyticsService.exportCSV();
-    } catch (err) {
-      alert('Failed to export CSV: ' + err.message);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -56,6 +66,8 @@ export const ManagerDashboard = () => {
               variant="outline"
               size="sm"
               leftIcon={Download}
+              isLoading={isExporting}
+              disabled={isExporting}
               onClick={handleExport}
             >
               Export CSV

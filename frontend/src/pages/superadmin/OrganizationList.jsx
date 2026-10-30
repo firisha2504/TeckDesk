@@ -22,9 +22,11 @@ import { Button } from '../../components/common/Button.jsx';
 import { Pagination } from '../../components/common/Pagination.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
 import { EmptyState } from '../../components/common/EmptyState.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 import { ORGANIZATION_STATUSES } from '../../utils/constants.js';
 
 export const OrganizationList = () => {
+  const { showError, showSuccess } = useModal();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -96,10 +98,20 @@ export const OrganizationList = () => {
     try {
       setActionLoading(true);
       await superadminService.approveOrganization(confirmApprove._id);
+      const orgName = confirmApprove.name;
       setConfirmApprove(null);
       await fetchOrganizations(true);
+      showSuccess({
+        title: 'Organization Approved',
+        message: `Organization "${orgName}" has been approved successfully.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Approval failed: ${err.message}`);
+      showError({
+        title: 'Approval Failed',
+        message: 'Approval failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -111,11 +123,21 @@ export const OrganizationList = () => {
     try {
       setActionLoading(true);
       await superadminService.rejectOrganization(rejectModal._id, rejectReason.trim());
+      const orgName = rejectModal.name;
       setRejectModal(null);
       setRejectReason('');
       await fetchOrganizations(true);
+      showSuccess({
+        title: 'Registration Rejected',
+        message: `Organization "${orgName}" registration has been rejected.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Rejection failed: ${err.message}`);
+      showError({
+        title: 'Rejection Failed',
+        message: 'Rejection failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -127,11 +149,21 @@ export const OrganizationList = () => {
     try {
       setActionLoading(true);
       await superadminService.suspendOrganization(suspendModal._id, suspendReason.trim());
+      const orgName = suspendModal.name;
       setSuspendModal(null);
       setSuspendReason('');
       await fetchOrganizations(true);
+      showSuccess({
+        title: 'Organization Suspended',
+        message: `Organization "${orgName}" has been suspended.`,
+        status: 'Suspended',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Suspension failed: ${err.message}`);
+      showError({
+        title: 'Suspension Failed',
+        message: 'Suspension failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -142,10 +174,20 @@ export const OrganizationList = () => {
     try {
       setActionLoading(true);
       await superadminService.reactivateOrganization(confirmReactivate._id);
+      const orgName = confirmReactivate.name;
       setConfirmReactivate(null);
       await fetchOrganizations(true);
+      showSuccess({
+        title: 'Organization Reactivated',
+        message: `Organization "${orgName}" has been reactivated successfully.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Reactivation failed: ${err.message}`);
+      showError({
+        title: 'Reactivation Failed',
+        message: 'Reactivation failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }

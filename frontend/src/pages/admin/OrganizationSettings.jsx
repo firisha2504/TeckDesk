@@ -5,8 +5,10 @@ import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 
 export const OrganizationSettings = () => {
+  const { showError } = useModal();
   const [org, setOrg] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,7 +65,10 @@ export const OrganizationSettings = () => {
       setMessage('Organization settings successfully updated.');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      alert('Save error: ' + err.message);
+      showError({
+        title: 'Save Failed',
+        message: 'Failed to update organization settings: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setSaving(false);
     }

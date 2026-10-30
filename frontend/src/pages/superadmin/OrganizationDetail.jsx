@@ -27,9 +27,11 @@ import { Modal } from '../../components/common/Modal.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 import { ORGANIZATION_STATUSES } from '../../utils/constants.js';
 
 export const OrganizationDetail = () => {
+  const { showError, showSuccess } = useModal();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -116,8 +118,17 @@ export const OrganizationDetail = () => {
       setSaveSuccess('Organization settings successfully updated.');
       await loadData(true);
       setTimeout(() => setSaveSuccess(''), 4000);
+      showSuccess({
+        title: 'Settings Saved',
+        message: 'Organization settings successfully updated.',
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Update failed: ${err.message}`);
+      showError({
+        title: 'Update Failed',
+        message: 'Failed to update organization: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setSaveLoading(false);
     }
@@ -129,8 +140,17 @@ export const OrganizationDetail = () => {
       await superadminService.approveOrganization(id);
       setConfirmApprove(false);
       await loadData(true);
+      showSuccess({
+        title: 'Organization Approved',
+        message: 'Organization has been approved successfully.',
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Approval failed: ${err.message}`);
+      showError({
+        title: 'Approval Failed',
+        message: 'Approval failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -145,8 +165,17 @@ export const OrganizationDetail = () => {
       setSuspendModal(false);
       setSuspendReason('');
       await loadData(true);
+      showSuccess({
+        title: 'Organization Suspended',
+        message: 'Organization has been suspended.',
+        status: 'Suspended',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Suspension failed: ${err.message}`);
+      showError({
+        title: 'Suspension Failed',
+        message: 'Suspension failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -158,8 +187,17 @@ export const OrganizationDetail = () => {
       await superadminService.reactivateOrganization(id);
       setConfirmReactivate(false);
       await loadData(true);
+      showSuccess({
+        title: 'Organization Reactivated',
+        message: 'Organization has been reactivated successfully.',
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Reactivation failed: ${err.message}`);
+      showError({
+        title: 'Reactivation Failed',
+        message: 'Reactivation failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }

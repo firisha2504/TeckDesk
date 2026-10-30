@@ -33,12 +33,23 @@ axiosClient.interceptors.response.use(
     const data = response.data;
     return data?.data !== undefined ? data.data : data;
   },
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('techdesk_token');
     }
 
-    const resData = error.response?.data;
+    let resData = error.response?.data;
+
+    // Handle Blob error response (e.g., when responseType: 'blob' was set on the request)
+    if (resData instanceof Blob) {
+      try {
+        const text = await resData.text();
+        resData = JSON.parse(text);
+      } catch {
+        // text is not JSON, leave resData as is
+      }
+    }
+
     const errorMessage =
       resData?.message ||
       (resData?.errors && resData.errors[0]?.message) ||
@@ -96,11 +107,16 @@ export const api = {
     }
   },
 
-  downloadBlob: async (endpoint) => {
+  downloadBlob: async (endpoint, config = {}) => {
     const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     try {
       const response = await axiosClient.get(url, {
         responseType: 'blob',
+        headers: {
+          Accept: 'text/csv, application/json, */*',
+          ...config.headers,
+        },
+        ...config,
       });
       return response;
     } catch (error) {

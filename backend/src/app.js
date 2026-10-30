@@ -2,7 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { corsMiddleware } from './config/cors.js';
-import { uploadDir } from './config/storage.js';
+import { uploadDir, avatarDir } from './config/storage.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { ApiError } from './utils/ApiError.js';
@@ -57,7 +57,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Secure file access routes (authentication & organization isolation required)
+// User avatar profile images: strictly isolated to avatars/ directory with safe static serving
+app.use(
+  '/uploads/avatars',
+  express.static(avatarDir, {
+    maxAge: '7d',
+    immutable: true,
+    dotfiles: 'ignore',
+  })
+);
+
+// Secure ticket attachment file access routes (authentication & organization isolation required)
 app.use('/uploads', apiLimiter, attachmentRoutes);
 
 // System Health Check endpoint

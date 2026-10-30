@@ -27,11 +27,17 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'modal-dialog-title' : undefined}
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 dark:bg-navy-950/80 backdrop-blur-sm transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal Dialog */}
@@ -43,7 +49,7 @@ export const Modal = ({
           {/* Header */}
           <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-navy-800">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+              <h3 id="modal-dialog-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
               {subtitle && (
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
               )}

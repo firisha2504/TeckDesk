@@ -68,6 +68,20 @@ export const AuthProvider = ({ children }) => {
     return updated;
   };
 
+  const uploadAvatar = async (formData) => {
+    const data = await authService.uploadAvatar(formData);
+    const updatedUser = data?.user || data;
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const removeAvatar = async () => {
+    const data = await authService.removeAvatar();
+    const updatedUser = data?.user || data;
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -78,6 +92,8 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateProfile,
+        uploadAvatar,
+        removeAvatar,
         refreshUser: fetchCurrentUser,
         isAuthenticated: !!user,
         role: user?.role,

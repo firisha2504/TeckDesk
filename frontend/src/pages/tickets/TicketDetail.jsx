@@ -15,6 +15,7 @@ import {
   Info,
 } from 'lucide-react';
 import { ticketService } from '../../services/ticketService.js';
+import { api } from '../../services/apiClient.js';
 import { TicketStatusBadge, TicketPriorityBadge } from '../../components/tickets/TicketStatusBadge.jsx';
 import { TicketTimeline } from '../../components/tickets/TicketTimeline.jsx';
 import { TicketComments } from '../../components/tickets/TicketComments.jsx';
@@ -25,9 +26,11 @@ import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
 import { formatDate, formatSlaRemaining } from '../../utils/formatDate.js';
 import { useSocket } from '../../hooks/useSocket.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 import { canReassignTicket, isStaff } from '../../utils/permissions.js';
 
 export const TicketDetail = () => {
+  const { showConfirm, showSuccess, showError } = useModal();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -103,6 +106,17 @@ export const TicketDetail = () => {
   const handleStatusChange = async (e) => {
     e.preventDefault();
     if (!targetStatus) return;
+
+    if (targetStatus === 'Closed') {
+      const confirmed = await showConfirm({
+        title: 'Close Ticket',
+        message: `Are you sure you want to close ticket ${ticket?.ticketId || ''}? This will mark the incident as closed.`,
+        confirmLabel: 'Close Ticket',
+        type: 'warning',
+      });
+      if (!confirmed) return;
+    }
+
     setStatusLoading(true);
     try {
       await ticketService.changeStatus(id, targetStatus, resolutionNotes);
@@ -110,7 +124,10 @@ export const TicketDetail = () => {
       setResolutionNotes('');
       await fetchTicketData();
     } catch (err) {
-      alert('Status change error: ' + err.message);
+      showError({
+        title: 'Status Change Failed',
+        message: 'Failed to update ticket status: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setStatusLoading(false);
     }
@@ -138,7 +155,10 @@ export const TicketDetail = () => {
       setReassignModalOpen(false);
       await fetchTicketData();
     } catch (err) {
-      alert('Reassign error: ' + err.message);
+      showError({
+        title: 'Reassignment Failed',
+        message: 'Failed to reassign ticket: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setReassignLoading(false);
     }
@@ -150,7 +170,10 @@ export const TicketDetail = () => {
       await ticketService.addComment(id, content, isInternal);
       // Socket will push comment to comments state
     } catch (err) {
-      alert('Comment error: ' + err.message);
+      showError({
+        title: 'Comment Failed',
+        message: 'Failed to post comment: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setCommentLoading(false);
     }
@@ -162,9 +185,38 @@ export const TicketDetail = () => {
       await ticketService.uploadAttachment(id, file);
       await fetchTicketData();
     } catch (err) {
-      alert('Upload error: ' + err.message);
+      showError({
+        title: 'Upload Failed',
+        message: 'Failed to upload attachment: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (file) => {
+    const confirmed = await showConfirm({
+      title: 'Delete Attachment',
+      message: `Are you sure you want to permanently delete "${file?.originalName || 'this file'}"? This action cannot be undone.`,
+      confirmLabel: 'Delete Attachment',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/attachments/${file._id}`);
+      showSuccess({
+        title: 'Attachment Deleted',
+        message: 'The attachment has been removed successfully.',
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
+      await fetchTicketData();
+    } catch (err) {
+      showError({
+        title: 'Delete Failed',
+        message: 'Failed to delete attachment: ' + (err.response?.data?.message || err.message),
+      });
     }
   };
 
@@ -402,6 +454,7 @@ export const TicketDetail = () => {
             <TicketAttachments
               attachments={ticket.attachments || []}
               onUpload={handleUploadAttachment}
+              onDelete={handleDeleteAttachment}
               isUploading={isUploading}
             />
           )}

@@ -21,9 +21,11 @@ import { Modal } from '../../components/common/Modal.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
 import { EmptyState } from '../../components/common/EmptyState.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 import { ORGANIZATION_STATUSES } from '../../utils/constants.js';
 
 export const RegistrationRequests = () => {
+  const { showError, showSuccess } = useModal();
   const [pendingRequests, setPendingRequests] = useState([]);
   const [historyRequests, setHistoryRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,10 +69,20 @@ export const RegistrationRequests = () => {
     try {
       setActionLoading(true);
       await superadminService.approveOrganization(confirmApprove._id);
+      const orgName = confirmApprove.name;
       setConfirmApprove(null);
       await fetchRequests(true);
+      showSuccess({
+        title: 'Organization Approved',
+        message: `Organization "${orgName}" has been approved successfully.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Approval failed: ${err.message}`);
+      showError({
+        title: 'Approval Failed',
+        message: 'Approval failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -82,11 +94,21 @@ export const RegistrationRequests = () => {
     try {
       setActionLoading(true);
       await superadminService.rejectOrganization(rejectModal._id, rejectReason.trim());
+      const orgName = rejectModal.name;
       setRejectModal(null);
       setRejectReason('');
       await fetchRequests(true);
+      showSuccess({
+        title: 'Registration Rejected',
+        message: `Organization "${orgName}" registration has been rejected.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert(`Rejection failed: ${err.message}`);
+      showError({
+        title: 'Rejection Failed',
+        message: 'Rejection failed: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setActionLoading(false);
     }

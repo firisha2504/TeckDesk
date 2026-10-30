@@ -9,14 +9,17 @@ import { Button } from '../../components/common/Button.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useTheme } from '../../contexts/ThemeContext.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 
 const CATEGORY_COLORS = ['#06B6D4', '#3B82F6', '#8B5CF6', '#F59E0B', '#F43F5E', '#64748B'];
 
 export const AnalyticsDashboard = () => {
   const { isDark } = useTheme();
+  const { showError } = useModal();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('7d');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     async function loadMetrics() {
@@ -34,10 +37,17 @@ export const AnalyticsDashboard = () => {
   }, [dateRange]);
 
   const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
     try {
       await analyticsService.exportCSV();
     } catch (err) {
-      alert('Export failed: ' + err.message);
+      showError({
+        title: 'Export Failed',
+        message: 'Failed to export CSV: ' + (err.response?.data?.message || err.message),
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -67,6 +77,8 @@ export const AnalyticsDashboard = () => {
               variant="primary"
               size="sm"
               leftIcon={Download}
+              isLoading={isExporting}
+              disabled={isExporting}
               onClick={handleExport}
             >
               Export CSV

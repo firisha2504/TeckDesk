@@ -6,9 +6,11 @@ import { DataTable } from '../../components/common/DataTable.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { SearchBar } from '../../components/common/SearchBar.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 import { ROLES } from '../../utils/constants.js';
 
 export const UserManagement = () => {
+  const { showConfirm, showSuccess, showError } = useModal();
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,17 @@ export const UserManagement = () => {
   const handleSaveUser = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
+
+    if (selectedUser.isActive && !editActive) {
+      const confirmed = await showConfirm({
+        title: `Deactivate User: ${selectedUser.name}`,
+        message: `Are you sure you want to deactivate "${selectedUser.name}"? They will no longer be permitted to log in to TechDesk.`,
+        confirmLabel: 'Deactivate User',
+        type: 'danger',
+      });
+      if (!confirmed) return;
+    }
+
     setSubmitting(true);
     try {
       await api.patch(`/users/${selectedUser._id}/role`, {
@@ -59,10 +72,20 @@ export const UserManagement = () => {
         teamId: editTeam || null,
         isActive: editActive,
       });
+      const userName = selectedUser.name;
       setSelectedUser(null);
       await loadUsers();
+      showSuccess({
+        title: 'User Updated',
+        message: `User "${userName}" profile and permissions updated successfully.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert('Error updating user: ' + err.message);
+      showError({
+        title: 'Update Failed',
+        message: 'Error updating user: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setSubmitting(false);
     }

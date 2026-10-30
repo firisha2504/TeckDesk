@@ -5,8 +5,10 @@ import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 
 export const SLAManagement = () => {
+  const { showSuccess, showError } = useModal();
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,7 +56,10 @@ export const SLAManagement = () => {
       setMessage('SLA Policy updated successfully.');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
-      alert('Failed to update SLA: ' + err.message);
+      showError({
+        title: 'SLA Update Failed',
+        message: 'Failed to update SLA: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setSaving(false);
     }
@@ -63,10 +68,19 @@ export const SLAManagement = () => {
   const handleTriggerScan = async () => {
     setScanning(true);
     try {
-      const res = await api.post('/sla/check');
-      alert(`SLA Monitor Scan: ${res?.message || 'Completed'}`);
+      await api.post('/sla/check');
+      showSuccess({
+        title: 'SLA Scan Completed',
+        message: 'The SLA monitoring scan has finished successfully.',
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert('Scan error: ' + err.message);
+      showError({
+        title: 'SLA Scan Failed',
+        message: 'Failed to complete SLA scan: ' + (err.response?.data?.message || err.message),
+        buttonText: 'Got it',
+      });
     } finally {
       setScanning(false);
     }

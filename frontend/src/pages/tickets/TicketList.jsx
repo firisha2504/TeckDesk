@@ -10,10 +10,12 @@ import { Pagination } from '../../components/common/Pagination.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { useSocket } from '../../hooks/useSocket.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 import { canExportReports } from '../../utils/permissions.js';
 
 export const TicketList = ({ onlyMyTickets = false, onlyMyAssigned = false, title = 'All Tickets' }) => {
   const { user } = useAuth();
+  const { showError } = useModal();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -73,11 +75,20 @@ export const TicketList = ({ onlyMyTickets = false, onlyMyAssigned = false, titl
     'ticket:assigned': () => fetchTickets(),
   });
 
+  const [isExporting, setIsExporting] = useState(false);
+
   const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
     try {
       await analyticsService.exportCSV({ status, priority, category });
     } catch (err) {
-      alert('Export failed: ' + err.message);
+      showError({
+        title: 'Export Failed',
+        message: 'Failed to export tickets CSV: ' + (err.response?.data?.message || err.message),
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -93,6 +104,8 @@ export const TicketList = ({ onlyMyTickets = false, onlyMyAssigned = false, titl
                 variant="outline"
                 size="sm"
                 leftIcon={Download}
+                isLoading={isExporting}
+                disabled={isExporting}
                 onClick={handleExport}
               >
                 Export CSV

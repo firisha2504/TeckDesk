@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Paperclip, UploadCloud, File, Download, Loader2 } from 'lucide-react';
+import { Paperclip, UploadCloud, File, Download, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../common/Button.jsx';
 
 export const TicketAttachments = ({
   attachments = [],
   onUpload,
+  onDelete,
   isUploading = false,
 }) => {
   const fileInputRef = useRef(null);
@@ -95,15 +96,28 @@ export const TicketAttachments = ({
               </div>
             </div>
 
-            <a
-              href={file.path}
-              target="_blank"
-              rel="noreferrer"
-              download={file.originalName}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-navy-800 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-            </a>
+            <div className="flex items-center gap-1 shrink-0">
+              <a
+                href={file.path}
+                target="_blank"
+                rel="noreferrer"
+                download={file.originalName}
+                title="Download attachment"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-navy-800 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => onDelete(file)}
+                  title="Delete attachment"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

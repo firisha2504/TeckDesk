@@ -1,4 +1,5 @@
 import { api } from './apiClient.js';
+import { downloadFile } from '../utils/downloadFile.js';
 
 export const analyticsService = {
   getEmployeeMetrics: async () => {
@@ -19,15 +20,25 @@ export const analyticsService = {
   },
 
   exportCSV: async (filters = {}) => {
-    const query = new URLSearchParams(filters).toString();
-    const blob = await api.get(`/analytics/export${query ? `?${query}` : ''}`);
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TechDesk-Report-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const query = new URLSearchParams();
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        query.append(key, val);
+      }
+    });
+
+    const queryString = query.toString();
+    const endpoint = `/analytics/export${queryString ? `?${queryString}` : ''}`;
+
+    // Request the CSV file as a Blob with proper responseType
+    const fileData = await api.downloadBlob(endpoint);
+
+    // Format download filename with current date stamp
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const filename = `TechDesk-Report-${dateStamp}.csv`;
+
+    // Safely trigger download with URL revocation and validation
+    downloadFile(fileData, filename, 'text/csv;charset=utf-8;');
   },
 };
+

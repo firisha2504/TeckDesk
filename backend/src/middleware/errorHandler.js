@@ -36,6 +36,15 @@ export const errorHandler = (err, req, res, next) => {
     error = new ApiError(401, 'Authentication token expired');
   }
 
+  // Handle Multer file upload errors
+  if (err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      error = new ApiError(400, 'Image file size must not exceed 5 MB.');
+    } else {
+      error = new ApiError(400, `Upload error: ${err.message}`);
+    }
+  }
+
   const statusCode = error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
 

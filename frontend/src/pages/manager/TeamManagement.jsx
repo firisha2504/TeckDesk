@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, UserPlus, Shield, Wrench, CheckCircle } from 'lucide-react';
+import { Users, Plus, UserPlus, Shield, Wrench, CheckCircle, Trash2 } from 'lucide-react';
 import { api } from '../../services/apiClient.js';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { Input } from '../../components/common/Input.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
+import { useModal } from '../../contexts/ModalContext.jsx';
 
 export const TeamManagement = () => {
+  const { showConfirm, showSuccess, showError } = useModal();
   const [teams, setTeams] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,10 +56,45 @@ export const TeamManagement = () => {
       setTeamName('');
       setSelectedMemberIds([]);
       await loadData();
+      showSuccess({
+        title: 'Team Created',
+        message: `Team "${teamName.trim()}" has been created successfully.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
     } catch (err) {
-      alert('Error creating team: ' + err.message);
+      showError({
+        title: 'Create Team Failed',
+        message: 'Error creating team: ' + (err.response?.data?.message || err.message),
+      });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteTeam = async (team) => {
+    const confirmed = await showConfirm({
+      title: `Delete Team: ${team.name}`,
+      message: `Are you sure you want to delete team "${team.name}"? Technicians will be unassigned from this team. This action cannot be undone.`,
+      confirmLabel: 'Delete Team',
+      type: 'danger',
+    });
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/teams/${team._id}`);
+      showSuccess({
+        title: 'Team Deleted',
+        message: `Team "${team.name}" has been deleted successfully.`,
+        status: 'Completed',
+        buttonText: 'Got it',
+      });
+      await loadData();
+    } catch (err) {
+      showError({
+        title: 'Delete Team Failed',
+        message: 'Failed to delete team: ' + (err.response?.data?.message || err.message),
+      });
     }
   };
 
@@ -105,9 +142,19 @@ export const TeamManagement = () => {
                 <span className="text-base font-bold text-slate-900 dark:text-slate-100">
                   {team.name}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-500">
-                  {team.members?.length || 0} Members
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-500">
+                    {team.members?.length || 0} Members
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteTeam(team)}
+                    title="Delete team"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Specialties */}
