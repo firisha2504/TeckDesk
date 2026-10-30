@@ -114,11 +114,11 @@ export const Features = () => {
       id: 'security-audit',
       icon: Shield,
       badge: 'Enterprise Security',
-      title: 'Immutable Audit Logging & 4-Tier Access Control',
+      title: 'Immutable Audit Logging & 5-Tier Access Control',
       description:
         'Enterprise security at every layer: HTTP-only session cookies, bcrypt password hashing, single-use SHA-256 password resets, multi-tenant organization scoping, and tamper-proof audit trails for all system actions.',
       bullets: [
-        'Strict Role-Based Access Control (Employee, Technician, Manager, Admin).',
+        'Strict Role-Based Access Control across 5 tiers: Super Admin, Organization Admin, Manager, Technician, and Employee.',
         'Immutable audit trail recording actor, action, timestamp, and IP.',
         'Zero token exposure in audit logs, API responses, or client messages.',
       ],

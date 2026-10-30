@@ -12,24 +12,25 @@ import {
   ArrowRight,
   Headphones,
   Zap,
-  Clock
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 
 export const About = () => {
   const roles = [
     {
-      title: 'Employees & End-Users',
-      icon: Users,
-      color: 'text-blue-500 bg-blue-500/10',
+      title: 'Platform Super Administrators',
+      icon: Shield,
+      color: 'text-amber-500 bg-amber-500/10',
       description:
-        'Submit technical issues in seconds without navigating confusing email chains. Receive live progress alerts, reply directly to technician notes, and know exactly when their problem will be resolved.',
+        'Oversee multi-tenant infrastructure, review and approve new institutional registrations, manage tenant lifecycles, and monitor platform-wide security audit trails.',
     },
     {
-      title: 'Support Technicians',
-      icon: Wrench,
-      color: 'text-cyan-500 bg-cyan-500/10',
+      title: 'Organization Administrators',
+      icon: ShieldCheck,
+      color: 'text-rose-500 bg-rose-500/10',
       description:
-        'Work from a structured queue sorted by urgency and SLA deadline. Utilize private diagnostic notes for internal troubleshooting, access detailed machine specifications, and avoid workload overload.',
+        'Govern organization-wide policies, configure priority response thresholds, manage user provisioning, enforce tenant isolation, and audit every system interaction through immutable security logs.',
     },
     {
       title: 'IT & Department Managers',
@@ -39,11 +40,18 @@ export const About = () => {
         'Oversee team capacity in real time, monitor SLA breach risks before they occur, manage team rosters, and generate compliance reports with automated CSV exports for executive review.',
     },
     {
-      title: 'System Administrators',
-      icon: Shield,
-      color: 'text-rose-500 bg-rose-500/10',
+      title: 'Support Technicians',
+      icon: Wrench,
+      color: 'text-cyan-500 bg-cyan-500/10',
       description:
-        'Govern organization-wide policies, configure priority response thresholds, manage user provisioning, enforce tenant isolation, and audit every system interaction through immutable security logs.',
+        'Work from a structured queue sorted by urgency and SLA deadline. Utilize private diagnostic notes for internal troubleshooting, access detailed incident specifications, and manage workloads.',
+    },
+    {
+      title: 'Employees & End-Users',
+      icon: Users,
+      color: 'text-blue-500 bg-blue-500/10',
+      description:
+        'Submit technical issues in seconds without navigating confusing email chains. Receive live progress alerts, reply directly to technician notes, and know exactly when their problem will be resolved.',
     },
   ];
 
