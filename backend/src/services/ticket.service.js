@@ -151,13 +151,31 @@ export const ticketService = {
       sortOrder = 'desc',
     } = queryFilters;
 
-    const query = { organization: user.organization?._id || user.organization };
+    const orgId = user.organization?._id || user.organization;
+    const query = {};
+    if (orgId) {
+      query.organization = orgId;
+    } else if (queryFilters.organizationId) {
+      query.organization = queryFilters.organizationId;
+    }
 
-    // Role-based scoping: Employees only see their own created tickets unless requested specifically
+    // Role-based scoping:
     if (user.role === 'employee') {
+      // Employees can only view tickets they created
       query.creator = user._id;
-    } else if (user.role === 'technician' && queryFilters.onlyMyAssigned === 'true') {
-      query.assignee = user._id;
+    } else if (user.role === 'technician') {
+      // Technicians can ONLY view tickets currently assigned to their own authenticated user ID
+      if (user.canViewTeamTickets && user.team) {
+        const teamId = user.team._id || user.team;
+        query.$or = [
+          { assignee: user._id },
+          { team: teamId, ...(user.canViewUnassignedTeam ? {} : { assignee: user._id }) },
+        ];
+      } else {
+        query.assignee = user._id;
+      }
+    } else if (assignee) {
+      query.assignee = assignee === 'unassigned' ? null : assignee;
     }
 
     if (status) {
@@ -172,11 +190,7 @@ export const ticketService = {
       query.category = category;
     }
 
-    if (assignee) {
-      query.assignee = assignee === 'unassigned' ? null : assignee;
-    }
-
-    if (creator) {
+    if (creator && user.role !== 'employee') {
       query.creator = creator;
     }
 
@@ -186,11 +200,17 @@ export const ticketService = {
     }
 
     if (search) {
-      query.$or = [
+      const searchConditions = [
         { ticketNumber: { $regex: search, $options: 'i' } },
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
       ];
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+        delete query.$or;
+      } else {
+        query.$or = searchConditions;
+      }
     }
 
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
@@ -218,13 +238,26 @@ export const ticketService = {
   },
 
   getTicketById: async (ticketId, user) => {
+    const orgId = user.organization?._id || user.organization;
     const query = {
       _id: ticketId,
-      organization: user.organization?._id || user.organization,
     };
+    if (orgId) {
+      query.organization = orgId;
+    }
 
     if (user.role === 'employee') {
       query.creator = user._id;
+    } else if (user.role === 'technician') {
+      if (user.canViewTeamTickets && user.team) {
+        const teamId = user.team._id || user.team;
+        query.$or = [
+          { assignee: user._id },
+          { team: teamId, ...(user.canViewUnassignedTeam ? {} : { assignee: user._id }) },
+        ];
+      } else {
+        query.assignee = user._id;
+      }
     }
 
     const ticket = await Ticket.findOne(query)
@@ -232,7 +265,16 @@ export const ticketService = {
       .populate('assignee', 'name email role avatar skills')
       .populate('team', 'name specialties')
       .populate('attachments')
-      .populate('slaPolicy');
+      .populate('slaPolicy')
+      .populate({
+        path: 'pendingReassignment',
+        populate: [
+          { path: 'originalTechnician', select: 'name email role avatar skills' },
+          { path: 'targetTechnician', select: 'name email role avatar skills' },
+          { path: 'targetTeam', select: 'name specialties' },
+          { path: 'reviewedBy', select: 'name email role' },
+        ],
+      });
 
     if (!ticket) {
       throw ApiError.notFound('Ticket not found or you do not have permission to view it.');
@@ -242,13 +284,20 @@ export const ticketService = {
   },
 
   changeStatus: async (ticketId, { status: newStatus, resolutionNotes = '' }, user, req) => {
-    const ticket = await Ticket.findOne({
-      _id: ticketId,
-      organization: user.organization?._id || user.organization,
-    }).populate('creator assignee');
+    const orgId = user.organization?._id || user.organization;
+    const ticketQuery = { _id: ticketId };
+    if (orgId) ticketQuery.organization = orgId;
+
+    if (user.role === 'employee') {
+      ticketQuery.creator = user._id;
+    } else if (user.role === 'technician') {
+      ticketQuery.assignee = user._id;
+    }
+
+    const ticket = await Ticket.findOne(ticketQuery).populate('creator assignee');
 
     if (!ticket) {
-      throw ApiError.notFound('Ticket not found');
+      throw ApiError.notFound('Ticket not found or you do not have permission to update it.');
     }
 
     const currentStatus = ticket.status;
@@ -349,6 +398,11 @@ export const ticketService = {
   },
 
   reassignTicket: async (ticketId, assigneeId, user, req) => {
+    // Only managers, admins, superadmins can directly reassign
+    if (!['manager', 'admin', 'superadmin'].includes(user.role)) {
+      throw ApiError.forbidden('Only managers and administrators can directly reassign tickets.');
+    }
+
     const ticket = await Ticket.findOne({
       _id: ticketId,
       organization: user.organization?._id || user.organization,
@@ -416,18 +470,20 @@ export const ticketService = {
   },
 
   addComment: async (ticketId, { content, isInternal = false }, user, req) => {
-    const ticket = await Ticket.findOne({
-      _id: ticketId,
-      organization: user.organization?._id || user.organization,
-    }).populate('creator assignee');
+    const orgId = user.organization?._id || user.organization;
+    const ticketQuery = { _id: ticketId };
+    if (orgId) ticketQuery.organization = orgId;
 
-    if (!ticket) {
-      throw ApiError.notFound('Ticket not found');
+    if (user.role === 'employee') {
+      ticketQuery.creator = user._id;
+    } else if (user.role === 'technician') {
+      ticketQuery.assignee = user._id;
     }
 
-    // Employees can only comment on their own tickets
-    if (user.role === 'employee' && ticket.creator?._id.toString() !== user._id.toString()) {
-      throw ApiError.forbidden('You can only comment on tickets created by you.');
+    const ticket = await Ticket.findOne(ticketQuery).populate('creator assignee');
+
+    if (!ticket) {
+      throw ApiError.notFound('Ticket not found or you do not have permission to comment on it.');
     }
 
     // Employees cannot post internal notes
@@ -497,14 +553,27 @@ export const ticketService = {
   },
 
   getTicketComments: async (ticketId, user) => {
-    // 1. Verify ticket exists and belongs to user's organization
+    // 1. Verify ticket exists and belongs to user's organization with role scoping
+    const orgId = user.organization?._id || user.organization;
     const ticketQuery = {
       _id: ticketId,
-      organization: user.organization?._id || user.organization,
     };
+    if (orgId) ticketQuery.organization = orgId;
+
     if (user.role === 'employee') {
       ticketQuery.creator = user._id;
+    } else if (user.role === 'technician') {
+      if (user.canViewTeamTickets && user.team) {
+        const teamId = user.team._id || user.team;
+        ticketQuery.$or = [
+          { assignee: user._id },
+          { team: teamId, ...(user.canViewUnassignedTeam ? {} : { assignee: user._id }) },
+        ];
+      } else {
+        ticketQuery.assignee = user._id;
+      }
     }
+
     const ticket = await Ticket.findOne(ticketQuery);
     if (!ticket) {
       throw ApiError.notFound('Ticket not found or you do not have permission to view it.');
@@ -512,8 +581,8 @@ export const ticketService = {
 
     const query = {
       ticket: ticketId,
-      organization: user.organization?._id || user.organization,
     };
+    if (orgId) query.organization = orgId;
 
     // Employees cannot see internal notes
     if (user.role === 'employee') {
@@ -527,23 +596,36 @@ export const ticketService = {
   },
 
   getTicketTimeline: async (ticketId, user) => {
-    // 1. Verify ticket exists and belongs to user's organization
+    // 1. Verify ticket exists and belongs to user's organization with role scoping
+    const orgId = user.organization?._id || user.organization;
     const ticketQuery = {
       _id: ticketId,
-      organization: user.organization?._id || user.organization,
     };
+    if (orgId) ticketQuery.organization = orgId;
+
     if (user.role === 'employee') {
       ticketQuery.creator = user._id;
+    } else if (user.role === 'technician') {
+      if (user.canViewTeamTickets && user.team) {
+        const teamId = user.team._id || user.team;
+        ticketQuery.$or = [
+          { assignee: user._id },
+          { team: teamId, ...(user.canViewUnassignedTeam ? {} : { assignee: user._id }) },
+        ];
+      } else {
+        ticketQuery.assignee = user._id;
+      }
     }
+
     const ticket = await Ticket.findOne(ticketQuery);
     if (!ticket) {
       throw ApiError.notFound('Ticket not found or you do not have permission to view it.');
     }
 
-    return TicketEvent.find({
-      ticket: ticketId,
-      organization: user.organization?._id || user.organization,
-    })
+    const query = { ticket: ticketId };
+    if (orgId) query.organization = orgId;
+
+    return TicketEvent.find(query)
       .populate('actor', 'name email role avatar')
       .sort({ createdAt: 1 });
   },

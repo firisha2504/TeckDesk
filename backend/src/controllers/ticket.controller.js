@@ -92,6 +92,17 @@ export const ticketController = {
 
   getRecommendedTechnicians: async (req, res, next) => {
     try {
+      if (req.user.role === 'technician') {
+        const ticket = await Ticket.findOne({
+          _id: req.params.id,
+          organization: req.organizationId,
+          assignee: req.user._id,
+        });
+        if (!ticket) {
+          throw ApiError.forbidden('You can only view recommendations for tickets assigned to you.');
+        }
+      }
+
       const candidates = await assignmentService.getRecommendedTechnicians(
         req.params.id,
         req.organizationId
@@ -120,6 +131,11 @@ export const ticketController = {
       // Check role permissions: employees may only attach to their own tickets
       if (req.user.role === 'employee' && ticket.creator.toString() !== req.user._id.toString()) {
         throw ApiError.forbidden('You can only upload attachments to your own tickets.');
+      }
+
+      // Check role permissions: technicians may only attach to tickets assigned to them
+      if (req.user.role === 'technician' && ticket.assignee?.toString() !== req.user._id.toString()) {
+        throw ApiError.forbidden('You can only upload attachments to tickets assigned to you.');
       }
 
       const attachment = await Attachment.create({

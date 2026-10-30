@@ -406,8 +406,17 @@ export const analyticsService = {
     };
   },
 
-  exportTicketsCSV: async (organizationId, filters = {}) => {
+  exportTicketsCSV: async (organizationId, filters = {}, user) => {
     const query = { organization: organizationId };
+
+    if (user?.role === 'technician') {
+      query.assignee = user._id;
+    } else if (user?.role === 'employee') {
+      query.creator = user._id;
+    } else if (filters.assignee) {
+      query.assignee = filters.assignee;
+    }
+
     if (filters.status) query.status = filters.status;
     if (filters.priority) query.priority = filters.priority;
     if (filters.category) query.category = filters.category;

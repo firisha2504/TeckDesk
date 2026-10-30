@@ -97,6 +97,11 @@ const ticketSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    pendingReassignment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ReassignmentRequest',
+      default: null,
+    },
   },
   {
     timestamps: true,

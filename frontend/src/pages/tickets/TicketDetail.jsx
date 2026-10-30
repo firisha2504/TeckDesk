@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   History,
   Info,
+  ArrowRightLeft,
+  XCircle,
 } from 'lucide-react';
 import { ticketService } from '../../services/ticketService.js';
 import { api } from '../../services/apiClient.js';
@@ -20,6 +22,8 @@ import { TicketStatusBadge, TicketPriorityBadge } from '../../components/tickets
 import { TicketTimeline } from '../../components/tickets/TicketTimeline.jsx';
 import { TicketComments } from '../../components/tickets/TicketComments.jsx';
 import { TicketAttachments } from '../../components/tickets/TicketAttachments.jsx';
+import { RequestReassignmentModal } from '../../components/tickets/RequestReassignmentModal.jsx';
+import { RejectReassignmentModal } from '../../components/tickets/RejectReassignmentModal.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { Modal } from '../../components/common/Modal.jsx';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton.jsx';
@@ -51,6 +55,11 @@ export const TicketDetail = () => {
   const [recommendedTechs, setRecommendedTechs] = useState([]);
   const [selectedTechId, setSelectedTechId] = useState('');
   const [reassignLoading, setReassignLoading] = useState(false);
+
+  // Reassignment request modal states
+  const [requestReassignModalOpen, setRequestReassignModalOpen] = useState(false);
+  const [rejectReassignModalOpen, setRejectReassignModalOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
   const [commentLoading, setCommentLoading] = useState(false);
@@ -94,6 +103,9 @@ export const TicketDetail = () => {
     'ticket:assigned': (payload) => {
       fetchTicketData();
     },
+    'reassignment:updated': () => {
+      fetchTicketData();
+    },
   });
 
   useEffect(() => {
@@ -102,6 +114,70 @@ export const TicketDetail = () => {
       return () => leaveTicket(id);
     }
   }, [id]);
+
+  const handleApproveReassignment = async () => {
+    const reqId = ticket?.pendingReassignment?._id || ticket?.pendingReassignment;
+    if (!reqId) return;
+
+    const confirmed = await showConfirm({
+      title: 'Approve Reassignment',
+      message: `Are you sure you want to approve this reassignment request for ticket #${ticket.ticketNumber}? The ticket will be reassigned immediately.`,
+      confirmLabel: 'Approve Reassignment',
+      type: 'info',
+    });
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    try {
+      await ticketService.approveReassignment(reqId);
+      showSuccess({
+        title: 'Reassignment Approved',
+        message: 'The ticket has been successfully reassigned.',
+        status: 'Approved',
+        buttonText: 'Done',
+      });
+      await fetchTicketData();
+    } catch (err) {
+      showError({
+        title: 'Approval Failed',
+        message: err.response?.data?.message || err.message || 'Failed to approve request.',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelReassignment = async () => {
+    const reqId = ticket?.pendingReassignment?._id || ticket?.pendingReassignment;
+    if (!reqId) return;
+
+    const confirmed = await showConfirm({
+      title: 'Cancel Reassignment Request',
+      message: 'Are you sure you want to cancel your pending reassignment request?',
+      confirmLabel: 'Yes, Cancel Request',
+      type: 'warning',
+    });
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    try {
+      await ticketService.cancelReassignmentRequest(ticket._id, reqId);
+      showSuccess({
+        title: 'Request Cancelled',
+        message: 'Your reassignment request has been cancelled.',
+        status: 'Cancelled',
+        buttonText: 'Done',
+      });
+      await fetchTicketData();
+    } catch (err) {
+      showError({
+        title: 'Cancellation Failed',
+        message: err.response?.data?.message || err.message || 'Failed to cancel request.',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleStatusChange = async (e) => {
     e.preventDefault();
@@ -241,6 +317,13 @@ export const TicketDetail = () => {
 
   const slaInfo = formatSlaRemaining(ticket.sla?.resolutionDeadline);
 
+  const isAssignedTech =
+    user?.role === 'technician' &&
+    ((ticket.assignee?._id && user?._id && ticket.assignee._id.toString() === user._id.toString()) ||
+      (ticket.assignee && user?._id && ticket.assignee.toString() === user._id.toString()));
+  const isManagerOrAdmin = ['manager', 'admin', 'superadmin'].includes(user?.role);
+  const pendingReq = ticket.pendingReassignment;
+
   return (
     <div className="space-y-6">
       <button
@@ -325,9 +408,84 @@ export const TicketDetail = () => {
           </div>
         </div>
 
+        {/* Pending Reassignment Alert Banner */}
+        {pendingReq && (
+          <div className="mx-6 sm:mx-8 my-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+                <ArrowRightLeft className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-bold text-amber-300">Pending Reassignment Request</h4>
+                  <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Awaiting Review
+                  </span>
+                </div>
+                <div className="text-xs text-slate-300 mt-1 space-y-0.5">
+                  <p>
+                    <span className="text-slate-400">Requested by:</span>{' '}
+                    <strong className="text-slate-100">
+                      {pendingReq.originalTechnician?.name || ticket.assignee?.name || 'Technician'}
+                    </strong>{' '}
+                    to{' '}
+                    <strong className="text-cyan-400">
+                      {pendingReq.targetTechnician?.name
+                        ? `Specialist: ${pendingReq.targetTechnician.name}`
+                        : pendingReq.targetTeam?.name
+                        ? `Team: ${pendingReq.targetTeam.name}`
+                        : 'Target Specialist'}
+                    </strong>
+                  </p>
+                  <p>
+                    <span className="text-slate-400">Reason:</span>{' '}
+                    <span className="italic text-slate-200">"{pendingReq.reason}"</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {isManagerOrAdmin && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="success"
+                    leftIcon={CheckCircle2}
+                    isLoading={actionLoading}
+                    onClick={handleApproveReassignment}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    leftIcon={XCircle}
+                    disabled={actionLoading}
+                    onClick={() => setRejectReassignModalOpen(true)}
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+              {isAssignedTech && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
+                  isLoading={actionLoading}
+                  onClick={handleCancelReassignment}
+                >
+                  Cancel Request
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Action Controls Bar */}
         <div className="px-6 sm:px-8 py-3.5 bg-slate-50 dark:bg-navy-950/50 border-b border-slate-100 dark:border-navy-800 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -346,6 +504,55 @@ export const TicketDetail = () => {
               >
                 Reassign
               </Button>
+            )}
+
+            {/* Technician Reassignment Action */}
+            {isAssignedTech && !pendingReq && (
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={ArrowRightLeft}
+                onClick={() => setRequestReassignModalOpen(true)}
+              >
+                Request Reassignment
+              </Button>
+            )}
+
+            {isAssignedTech && pendingReq && (
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={XCircle}
+                className="border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
+                onClick={handleCancelReassignment}
+                isLoading={actionLoading}
+              >
+                Cancel Reassignment
+              </Button>
+            )}
+
+            {/* Manager Direct Reassignment Actions */}
+            {isManagerOrAdmin && pendingReq && (
+              <>
+                <Button
+                  variant="success"
+                  size="sm"
+                  leftIcon={CheckCircle2}
+                  onClick={handleApproveReassignment}
+                  isLoading={actionLoading}
+                >
+                  Approve Reassignment
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  leftIcon={XCircle}
+                  onClick={() => setRejectReassignModalOpen(true)}
+                  disabled={actionLoading}
+                >
+                  Reject Reassignment
+                </Button>
+              </>
             )}
           </div>
 
@@ -593,6 +800,23 @@ export const TicketDetail = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Request Reassignment Modal for Technicians */}
+      <RequestReassignmentModal
+        isOpen={requestReassignModalOpen}
+        onClose={() => setRequestReassignModalOpen(false)}
+        ticket={ticket}
+        onSuccess={fetchTicketData}
+      />
+
+      {/* Reject Reassignment Modal for Managers */}
+      <RejectReassignmentModal
+        isOpen={rejectReassignModalOpen}
+        onClose={() => setRejectReassignModalOpen(false)}
+        requestId={pendingReq?._id || pendingReq}
+        ticketNumber={ticket.ticketNumber}
+        onSuccess={fetchTicketData}
+      />
     </div>
   );
 };

@@ -11,7 +11,8 @@ export const AuthProvider = ({ children }) => {
   const fetchCurrentUser = async () => {
     const token = localStorage.getItem('techdesk_token');
     // If no token exists in storage, user is a guest; don't trigger unnecessary 401
-    if (!token) {
+    if (!token || token === 'undefined' || token === 'null') {
+      if (token) localStorage.removeItem('techdesk_token');
       setUser(null);
       setLoading(false);
       return;

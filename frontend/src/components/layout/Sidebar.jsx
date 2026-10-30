@@ -45,8 +45,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
     ],
     technician: [
       { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/tickets/assigned', label: 'Assigned Tickets', icon: Ticket },
-      { to: '/tickets', label: 'All Tickets', icon: FileText },
+      { to: '/tickets/assigned', label: 'My Assigned Tickets', icon: Ticket },
       { to: '/notifications', label: 'Notifications', icon: Bell },
       { to: '/settings/profile', label: 'Profile', icon: Users },
       { to: '/settings/appearance', label: 'Settings', icon: Settings },
@@ -54,6 +53,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
     manager: [
       { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/tickets', label: 'Tickets', icon: Ticket },
+      { to: '/queue', label: 'Assignment Queue', icon: UserCheck },
       { to: '/teams', label: 'Team', icon: Users },
       { to: '/analytics', label: 'Analytics', icon: BarChart3 },
       { to: '/sla', label: 'SLA Policies', icon: Clock },
@@ -63,6 +63,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
     admin: [
       { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/tickets', label: 'Tickets', icon: Ticket },
+      { to: '/queue', label: 'Assignment Queue', icon: UserCheck },
       { to: '/users', label: 'Users', icon: Users },
       { to: '/analytics', label: 'Analytics', icon: BarChart3 },
       { to: '/sla', label: 'SLA Policies', icon: Clock },

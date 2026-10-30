@@ -48,4 +48,38 @@ export const ticketService = {
     formData.append('file', file);
     return api.upload(`/tickets/${id}/attachments`, formData);
   },
+
+  requestReassignment: async (id, data) => {
+    return api.post(`/tickets/${id}/reassignment-request`, data);
+  },
+
+  getReassignmentRequests: async (id) => {
+    return api.get(`/tickets/${id}/reassignment-requests`);
+  },
+
+  cancelReassignmentRequest: async (ticketId, requestId) => {
+    return api.post(`/tickets/${ticketId}/reassignment-requests/${requestId}/cancel`);
+  },
+
+  listReassignments: async (params = {}) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        query.append(key, val);
+      }
+    });
+    return api.get(`/reassignments?${query.toString()}`);
+  },
+
+  approveReassignment: async (requestId) => {
+    return api.post(`/reassignments/${requestId}/approve`);
+  },
+
+  rejectReassignment: async (requestId, reason) => {
+    return api.post(`/reassignments/${requestId}/reject`, { reason });
+  },
+
+  getTeams: async () => {
+    return api.get('/teams');
+  },
 };

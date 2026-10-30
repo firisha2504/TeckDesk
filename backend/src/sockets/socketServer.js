@@ -132,6 +132,16 @@ export const initSocketServer = (httpServer) => {
           return socket.emit('error', { message: 'Unauthorized: Employees may only view their own tickets' });
         }
 
+        // Role check for technicians: technicians may only join tickets assigned to them
+        if (user.role === 'technician') {
+          const isAssigned = ticket.assignee && ticket.assignee.toString() === user._id.toString();
+          if (!isAssigned) {
+            logger.warn(`Technician ticket join blocked: technician ${user.email} attempted ticket ${ticketId}`);
+            if (typeof callback === 'function') callback({ error: 'Unauthorized: Technicians may only access tickets assigned to them' });
+            return socket.emit('error', { message: 'Unauthorized: Technicians may only access tickets assigned to them' });
+          }
+        }
+
         socket.join(`ticket:${ticketId}`);
         logger.debug(`User ${user.name} joined room ticket:${ticketId}`);
         if (typeof callback === 'function') callback({ success: true });
@@ -172,6 +182,11 @@ export const socketEmitter = {
     }
   },
   emitToOrg: (orgId, event, data) => {
+    if (io && orgId) {
+      io.to(`org:${orgId}`).emit(event, data);
+    }
+  },
+  emitToOrganization: (orgId, event, data) => {
     if (io && orgId) {
       io.to(`org:${orgId}`).emit(event, data);
     }

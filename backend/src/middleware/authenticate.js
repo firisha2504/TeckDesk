@@ -7,13 +7,19 @@ export const authenticate = async (req, res, next) => {
   try {
     let token = null;
 
-    // 1. Check HTTP-only cookie first
-    if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
+    // 1. Check Authorization Bearer header first (explicit client token)
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      const parts = req.headers.authorization.split(' ');
+      if (parts.length === 2 && parts[1] && parts[1] !== 'undefined' && parts[1] !== 'null') {
+        token = parts[1].trim();
+      }
     }
-    // 2. Check Authorization Bearer header
-    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1];
+
+    // 2. Fallback to HTTP-only cookie if Authorization header is not provided
+    if (!token && req.cookies && req.cookies.token) {
+      if (req.cookies.token !== 'undefined' && req.cookies.token !== 'null') {
+        token = req.cookies.token;
+      }
     }
 
     if (!token) {
@@ -25,6 +31,15 @@ export const authenticate = async (req, res, next) => {
     try {
       decoded = jwt.verify(token, env.JWT_SECRET);
     } catch (jwtErr) {
+      // Clear poisoned cookie if present so it doesn't break subsequent requests
+      if (req.cookies && req.cookies.token) {
+        res.clearCookie('token', {
+          httpOnly: true,
+          secure: env.IS_PROD,
+          sameSite: env.IS_PROD ? 'none' : 'lax',
+        });
+      }
+
       if (jwtErr.name === 'TokenExpiredError') {
         return next(ApiError.unauthorized('Session expired. Please sign in again.'));
       }

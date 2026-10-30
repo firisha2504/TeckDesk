@@ -28,7 +28,7 @@ router.post(
 );
 router.post('/register', authLimiter, validateRequest(registerSchema), authController.register);
 router.post('/login', authLimiter, validateRequest(loginSchema), authController.login);
-router.post('/logout', authenticate, authController.logout);
+router.post('/logout', authController.logout);
 router.get('/me', authenticate, authController.getCurrentUser);
 router.post('/forgot-password', authLimiter, validateRequest(forgotPasswordSchema), authController.forgotPassword);
 router.post('/reset-password', authLimiter, validateRequest(resetPasswordSchema), authController.resetPassword);

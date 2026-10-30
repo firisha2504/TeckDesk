@@ -19,8 +19,15 @@ export const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('techdesk_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token && token !== 'undefined' && token !== 'null') {
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        if (!config.headers) {
+          config.headers = {};
+        }
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },

@@ -40,12 +40,29 @@ export const attachmentController = {
         if (req.user.role === 'employee') {
           const isCreator =
             attachment.ticket &&
-            attachment.ticket.creator.toString() === req.user._id.toString();
+            attachment.ticket.creator?.toString() === req.user._id.toString();
           const isUploader =
             attachment.uploader &&
             attachment.uploader.toString() === req.user._id.toString();
 
           if (!isCreator && !isUploader) {
+            throw ApiError.forbidden(
+              'Access denied: You do not have permission to view attachments for this ticket.'
+            );
+          }
+        }
+
+        // 3. Ticket-level role scoping for technicians
+        if (req.user.role === 'technician') {
+          const isAssignee =
+            attachment.ticket &&
+            attachment.ticket.assignee &&
+            attachment.ticket.assignee.toString() === req.user._id.toString();
+          const isUploader =
+            attachment.uploader &&
+            attachment.uploader.toString() === req.user._id.toString();
+
+          if (!isAssignee && !isUploader) {
             throw ApiError.forbidden(
               'Access denied: You do not have permission to view attachments for this ticket.'
             );

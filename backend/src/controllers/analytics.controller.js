@@ -44,7 +44,7 @@ export const analyticsController = {
 
   exportCSV: async (req, res, next) => {
     try {
-      const csv = await analyticsService.exportTicketsCSV(req.organizationId, req.query);
+      const csv = await analyticsService.exportTicketsCSV(req.organizationId, req.query, req.user);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader(
         'Content-Disposition',

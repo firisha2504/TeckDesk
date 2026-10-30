@@ -18,6 +18,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import organizationRoutes from './routes/organization.routes.js';
 import superadminRoutes from './routes/superadmin.routes.js';
 import attachmentRoutes from './routes/attachment.routes.js';
+import reassignmentRoutes from './routes/reassignment.routes.js';
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use('/api/notifications', apiLimiter, notificationRoutes);
 app.use('/api/organizations', apiLimiter, organizationRoutes);
 app.use('/api/superadmin', apiLimiter, superadminRoutes);
 app.use('/api/attachments', apiLimiter, attachmentRoutes);
+app.use('/api/reassignments', apiLimiter, reassignmentRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, res, next) => {

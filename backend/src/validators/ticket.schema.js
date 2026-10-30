@@ -28,3 +28,30 @@ export const addCommentSchema = z.object({
   content: z.string().min(1, 'Comment text cannot be empty'),
   isInternal: z.boolean().optional().default(false),
 });
+
+export const createReassignmentRequestSchema = z
+  .object({
+    targetTechnicianId: z.string().optional().nullable(),
+    targetTeamId: z.string().optional().nullable(),
+    reason: z
+      .string()
+      .trim()
+      .min(3, 'Reassignment reason is mandatory and must be at least 3 characters')
+      .max(1000, 'Reason cannot exceed 1000 characters'),
+  })
+  .refine(
+    (data) => Boolean((data.targetTechnicianId && data.targetTechnicianId.trim()) || (data.targetTeamId && data.targetTeamId.trim())),
+    {
+      message: 'Either a target technician or target team must be selected.',
+      path: ['targetTechnicianId'],
+    }
+  );
+
+export const rejectReassignmentRequestSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(3, 'Rejection reason is mandatory and must be at least 3 characters')
+    .max(1000, 'Rejection reason cannot exceed 1000 characters'),
+});
+

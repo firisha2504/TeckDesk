@@ -24,8 +24,9 @@ export const broadcastTicketUpdate = (ticket, eventType, extraData = {}) => {
   // Broadcast to anyone currently viewing the specific ticket detail
   socketEmitter.emitToTicket(ticketId, eventType, payload);
 
-  // Broadcast to the organization room (updates tables/lists)
-  socketEmitter.emitToOrg(orgId, eventType, payload);
+  // Broadcast to managers and administrators (updates queues and dashboards)
+  socketEmitter.emitToRole(orgId.toString(), 'manager', eventType, payload);
+  socketEmitter.emitToRole(orgId.toString(), 'admin', eventType, payload);
 
   // If assigned, send direct event to technician
   if (ticket.assignee) {
