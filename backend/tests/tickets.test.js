@@ -7,6 +7,9 @@ import { User } from '../src/models/User.js';
 import { Ticket } from '../src/models/Ticket.js';
 
 describe('Ticket Lifecycle API Tests', () => {
+  let org = null;
+  let employeeUser = null;
+  let technicianUser = null;
   let employeeToken = '';
   let technicianToken = '';
   let createdTicketId = '';
@@ -14,33 +17,35 @@ describe('Ticket Lifecycle API Tests', () => {
   beforeAll(async () => {
     await connectDatabase();
 
-    // Register test employee
-    const empRes = await request(app)
-      .post('/api/auth/register')
-      .send({
-        name: 'Employee Tester',
-        email: `emp_test_${Date.now()}@techdesk.com`,
-        password: 'Password123!',
-        role: 'employee',
-        organizationName: 'Ticket Lifecycle Org',
-      });
-    employeeToken = empRes.body.data.token;
+    org = await Organization.create({
+      name: 'Ticket Lifecycle Org',
+      slug: `ticket-lifecycle-${Date.now()}`,
+      status: 'active',
+      plan: 'standard',
+    });
 
-    // Register test technician
-    const techRes = await request(app)
-      .post('/api/auth/register')
-      .send({
-        name: 'Tech Specialist',
-        email: `tech_test_${Date.now()}@techdesk.com`,
-        password: 'Password123!',
-        role: 'technician',
-        organizationName: 'Ticket Lifecycle Org',
-      });
-    technicianToken = techRes.body.data.token;
+    employeeUser = await User.create({
+      name: 'Employee Tester',
+      email: `emp_test_${Date.now()}@techdesk.com`,
+      password: 'Password123!',
+      role: 'employee',
+      organization: org._id,
+      isActive: true,
+    });
+    employeeToken = employeeUser.generateAuthToken();
+
+    technicianUser = await User.create({
+      name: 'Tech Specialist',
+      email: `tech_test_${Date.now()}@techdesk.com`,
+      password: 'Password123!',
+      role: 'technician',
+      organization: org._id,
+      isActive: true,
+    });
+    technicianToken = technicianUser.generateAuthToken();
   });
 
   afterAll(async () => {
-    const org = await Organization.findOne({ name: 'Ticket Lifecycle Org' });
     if (org) {
       await User.deleteMany({ organization: org._id });
       await Ticket.deleteMany({ organization: org._id });

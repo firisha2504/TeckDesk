@@ -117,16 +117,25 @@ export const ticketController = {
         throw ApiError.notFound('Ticket not found.');
       }
 
+      // Check role permissions: employees may only attach to their own tickets
+      if (req.user.role === 'employee' && ticket.creator.toString() !== req.user._id.toString()) {
+        throw ApiError.forbidden('You can only upload attachments to your own tickets.');
+      }
+
       const attachment = await Attachment.create({
         originalName: req.file.originalname,
         filename: req.file.filename,
         mimeType: req.file.mimetype,
         size: req.file.size,
-        path: `/uploads/${req.file.filename}`,
+        path: `/api/attachments/${req.file.filename}`,
         uploader: req.user._id,
         organization: req.organizationId,
         ticket: ticket._id,
       });
+
+      // Update path to use the direct ID endpoint
+      attachment.path = `/api/attachments/${attachment._id}/download`;
+      await attachment.save();
 
       ticket.attachments.push(attachment._id);
       await ticket.save();

@@ -425,6 +425,11 @@ export const ticketService = {
       throw ApiError.notFound('Ticket not found');
     }
 
+    // Employees can only comment on their own tickets
+    if (user.role === 'employee' && ticket.creator?._id.toString() !== user._id.toString()) {
+      throw ApiError.forbidden('You can only comment on tickets created by you.');
+    }
+
     // Employees cannot post internal notes
     const internal = user.role === 'employee' ? false : Boolean(isInternal);
 
@@ -492,6 +497,19 @@ export const ticketService = {
   },
 
   getTicketComments: async (ticketId, user) => {
+    // 1. Verify ticket exists and belongs to user's organization
+    const ticketQuery = {
+      _id: ticketId,
+      organization: user.organization?._id || user.organization,
+    };
+    if (user.role === 'employee') {
+      ticketQuery.creator = user._id;
+    }
+    const ticket = await Ticket.findOne(ticketQuery);
+    if (!ticket) {
+      throw ApiError.notFound('Ticket not found or you do not have permission to view it.');
+    }
+
     const query = {
       ticket: ticketId,
       organization: user.organization?._id || user.organization,
@@ -509,6 +527,19 @@ export const ticketService = {
   },
 
   getTicketTimeline: async (ticketId, user) => {
+    // 1. Verify ticket exists and belongs to user's organization
+    const ticketQuery = {
+      _id: ticketId,
+      organization: user.organization?._id || user.organization,
+    };
+    if (user.role === 'employee') {
+      ticketQuery.creator = user._id;
+    }
+    const ticket = await Ticket.findOne(ticketQuery);
+    if (!ticket) {
+      throw ApiError.notFound('Ticket not found or you do not have permission to view it.');
+    }
+
     return TicketEvent.find({
       ticket: ticketId,
       organization: user.organization?._id || user.organization,

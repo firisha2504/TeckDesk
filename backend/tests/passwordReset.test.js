@@ -19,6 +19,7 @@ describe('Password Reset Security & SMTP Tests', () => {
     testOrg = await Organization.create({
       name: 'Security Test Org',
       slug: `security-test-org-${Date.now()}`,
+      status: 'active',
     });
 
     testUser = await User.create({

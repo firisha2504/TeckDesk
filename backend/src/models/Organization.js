@@ -24,6 +24,43 @@ const organizationSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    type: {
+      type: String,
+      default: 'Enterprise',
+      trim: true,
+    },
+    officialEmail: {
+      type: String,
+      default: '',
+      trim: true,
+      lowercase: true,
+    },
+    phone: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    website: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'pending', 'suspended', 'rejected', 'trial'],
+      default: 'pending',
+      index: true,
+    },
+    plan: {
+      type: String,
+      enum: ['free', 'standard', 'enterprise'],
+      default: 'standard',
+    },
     settings: {
       allowRegistration: {
         type: Boolean,

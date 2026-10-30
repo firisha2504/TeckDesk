@@ -13,6 +13,7 @@ export const PublicNavbar = () => {
   const navLinks = [
     { label: 'Home', path: '/' },
     { label: 'Features', path: '/features' },
+    { label: 'Register Organization', path: '/register-organization' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
   ];

@@ -17,6 +17,10 @@ export const authService = {
     return data;
   },
 
+  registerOrganization: async (orgData) => {
+    return api.post('/auth/register-organization', orgData);
+  },
+
   logout: async () => {
     try {
       await api.post('/auth/logout');

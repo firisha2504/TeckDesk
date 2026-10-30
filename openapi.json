@@ -1,0 +1,419 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "TechDesk Smart IT Support & Multi-Tenant Incident Management API",
+    "version": "1.0.0",
+    "description": "Enterprise-grade RESTful API for TechDesk, featuring multi-tenant organization isolation, dual-tier administrative controls (Platform Super Admin & Organization Admin), intelligent SLA escalation, and real-time WebSocket communication."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://api.techdesk.io/api",
+      "description": "Production API Server"
+    }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "User login, session token retrieval, password resets, and profile management" },
+    { "name": "Super Admin", "description": "Platform-wide operations: organization lifecycle, approval, suspension, and global audit logs" },
+    { "name": "Organizations", "description": "Tenant organization profiles, public registration, and configuration" },
+    { "name": "Users", "description": "Tenant user management, role assignments, and profile updates" },
+    { "name": "Teams", "description": "Support teams, department leads, and member assignments" },
+    { "name": "Tickets", "description": "Core incident management lifecycle: creation, triage, status updates, and reassignment" },
+    { "name": "Comments & Timeline", "description": "Ticket discussions, communication history, and audit timeline" },
+    { "name": "Attachments", "description": "Secure file uploads, virus/type-filtered downloads, and ticket document attachments" },
+    { "name": "SLA Policies", "description": "Service Level Agreement deadlines, priority targets, and breach monitoring" },
+    { "name": "Notifications", "description": "In-app alerts, read status toggling, and real-time dispatch" },
+    { "name": "Analytics", "description": "Role-tailored dashboards, technician performance metrics, and CSV reporting" },
+    { "name": "System Health", "description": "API status, process memory, and uptime diagnostics" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JSON Web Token provided in the Authorization header: `Bearer <token>`"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "token",
+        "description": "HttpOnly secure session cookie storing the JWT token"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "statusCode": { "type": "integer", "example": 200 },
+          "message": { "type": "string", "example": "Operation completed successfully." },
+          "data": { "type": "object" }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "statusCode": { "type": "integer", "example": 403 },
+          "message": { "type": "string", "example": "Access forbidden: Insufficient permissions." },
+          "errors": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "admin@techdesk.com" },
+          "password": { "type": "string", "format": "password", "example": "Password123!" }
+        }
+      },
+      "RegisterOrganizationRequest": {
+        "type": "object",
+        "required": ["organizationName", "adminName", "adminEmail", "adminPassword"],
+        "properties": {
+          "organizationName": { "type": "string", "example": "Metropolitan University" },
+          "domain": { "type": "string", "example": "metro-uni.edu" },
+          "type": { "type": "string", "enum": ["University / College", "Hospital / Healthcare", "Enterprise", "Government Institution", "Non-Profit / NGO", "Other"], "example": "University / College" },
+          "officialEmail": { "type": "string", "format": "email", "example": "info@metro-uni.edu" },
+          "phone": { "type": "string", "example": "+1-555-0199" },
+          "address": { "type": "string", "example": "100 University Ave, Tech City" },
+          "adminName": { "type": "string", "example": "Dr. Alan Turing" },
+          "adminEmail": { "type": "string", "format": "email", "example": "admin@metro-uni.edu" },
+          "adminPassword": { "type": "string", "format": "password", "example": "SecurePass2026!" }
+        }
+      },
+      "CreateTicketRequest": {
+        "type": "object",
+        "required": ["title", "description", "category", "priority"],
+        "properties": {
+          "title": { "type": "string", "example": "Network switch failure in Data Center 2" },
+          "description": { "type": "string", "example": "Switch rack B4 stopped responding to ping after maintenance." },
+          "category": { "type": "string", "enum": ["Hardware", "Software", "Network", "Security", "Account", "Other"], "example": "Network" },
+          "priority": { "type": "string", "enum": ["Critical", "High", "Medium", "Low"], "example": "Critical" },
+          "tags": { "type": "array", "items": { "type": "string" }, "example": ["datacenter", "infrastructure"] }
+        }
+      },
+      "ChangeStatusRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["Open", "Assigned", "In Progress", "Pending User", "Resolved", "Closed"], "example": "In Progress" },
+          "resolutionNotes": { "type": "string", "example": "Replaced faulty SFP transceiver on port 12." }
+        }
+      },
+      "ReassignTicketRequest": {
+        "type": "object",
+        "required": ["assigneeId"],
+        "properties": {
+          "assigneeId": { "type": "string", "example": "6ae4a0a8e61654672c50a1df" }
+        }
+      },
+      "AddCommentRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": { "type": "string", "example": "Diagnostics completed. Waiting for vendor part delivery." },
+          "isInternal": { "type": "boolean", "default": false, "example": false }
+        }
+      },
+      "CreateTeamRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "example": "Cloud Infrastructure & DevOps" },
+          "description": { "type": "string", "example": "Handles AWS, Kubernetes, and Core Network services." },
+          "leadId": { "type": "string", "example": "6ae4a0a8e61654672c50a1dc" },
+          "memberIds": { "type": "array", "items": { "type": "string" }, "example": ["6ae4a0a8e61654672c50a1df", "6ae4a0a8e61654672c50a1e0"] },
+          "specialties": { "type": "array", "items": { "type": "string" }, "example": ["Network", "Security", "Other"] }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System Health"],
+        "summary": "Check API health and operational diagnostics",
+        "description": "Public health check endpoint reporting process uptime, memory usage, and operational status.",
+        "responses": {
+          "200": {
+            "description": "API is operational",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiResponse" } } }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Authenticate user and issue session JWT",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Authentication successful, returns user payload and JWT token" },
+          "401": { "description": "Invalid email or password" },
+          "403": { "description": "Organization pending approval or suspended" }
+        }
+      }
+    },
+    "/auth/register-organization": {
+      "post": {
+        "tags": ["Organizations"],
+        "summary": "Self-register a new institution organization and primary admin",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterOrganizationRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Organization registered successfully in 'pending' status" },
+          "409": { "description": "Organization name, slug, or admin email already exists" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get authenticated user profile and organization status",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Current user profile with roles and organization details" },
+          "401": { "description": "Unauthenticated / token expired" }
+        }
+      }
+    },
+    "/superadmin/overview": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "Get platform-wide multi-tenant overview statistics",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Global totals: organizations, users, tickets, and growth" },
+          "403": { "description": "Requires 'superadmin' platform role" }
+        }
+      }
+    },
+    "/superadmin/organizations": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "List all registered organizations with search, status, and pagination",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["active", "pending", "suspended", "rejected"] } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated list of platform organizations" }
+        }
+      }
+    },
+    "/superadmin/organizations/{id}/approve": {
+      "patch": {
+        "tags": ["Super Admin"],
+        "summary": "Approve a pending organization registration",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Organization approved and status set to 'active'" }
+        }
+      }
+    },
+    "/superadmin/organizations/{id}/suspend": {
+      "patch": {
+        "tags": ["Super Admin"],
+        "summary": "Suspend an organization's platform access",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "reason": { "type": "string" } } } } }
+        },
+        "responses": {
+          "200": { "description": "Organization suspended in real-time" }
+        }
+      }
+    },
+    "/superadmin/organizations/{id}/reactivate": {
+      "patch": {
+        "tags": ["Super Admin"],
+        "summary": "Reactivate a suspended organization",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Organization restored to 'active'" }
+        }
+      }
+    },
+    "/superadmin/audit-logs": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "Query platform-wide security audit logs",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Platform audit log entries with actors, actions, and timestamps" }
+        }
+      }
+    },
+    "/tickets": {
+      "get": {
+        "tags": ["Tickets"],
+        "summary": "List tickets strictly scoped to authenticated user's organization",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "priority", "in": "query", "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "List of tickets within the tenant" }
+        }
+      },
+      "post": {
+        "tags": ["Tickets"],
+        "summary": "Create a new ticket within the user's organization",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTicketRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Ticket created with sequential reference number (TD-XXXX)" }
+        }
+      }
+    },
+    "/tickets/{id}": {
+      "get": {
+        "tags": ["Tickets"],
+        "summary": "Get ticket details by ID (Tenant-isolated IDOR protected)",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Ticket details with populate creator, assignee, and SLA data" },
+          "404": { "description": "Ticket not found or belongs to another organization" }
+        }
+      }
+    },
+    "/tickets/{id}/status": {
+      "patch": {
+        "tags": ["Tickets"],
+        "summary": "Update ticket lifecycle status (Open -> In Progress -> Resolved, etc.)",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChangeStatusRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Status updated successfully" },
+          "400": { "description": "Invalid status transition" }
+        }
+      }
+    },
+    "/tickets/{id}/reassign": {
+      "patch": {
+        "tags": ["Tickets"],
+        "summary": "Reassign ticket to another technician (Strictly validates same-tenant membership)",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReassignTicketRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Ticket reassigned" },
+          "400": { "description": "Technician does not belong to this organization" }
+        }
+      }
+    },
+    "/tickets/{id}/comments": {
+      "get": {
+        "tags": ["Comments & Timeline"],
+        "summary": "List all comments on a ticket",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Array of comments with authors and attachments" },
+          "404": { "description": "Ticket not found or cross-tenant access denied" }
+        }
+      },
+      "post": {
+        "tags": ["Comments & Timeline"],
+        "summary": "Post a comment on a ticket",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AddCommentRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Comment created" }
+        }
+      }
+    },
+    "/tickets/{id}/timeline": {
+      "get": {
+        "tags": ["Comments & Timeline"],
+        "summary": "Get full audit event history and timeline for a ticket",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Timeline of ticket events (created, assigned, status changed, etc.)" }
+        }
+      }
+    },
+    "/attachments/{id}/download": {
+      "get": {
+        "tags": ["Attachments"],
+        "summary": "Download attachment file with tenant authorization check",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Binary file stream with appropriate Content-Type and Disposition headers" },
+          "403": { "description": "Cross-organization file access or unauthorized employee access forbidden" }
+        }
+      }
+    },
+    "/teams": {
+      "get": {
+        "tags": ["Teams"],
+        "summary": "List support teams within the authenticated user's organization",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Array of teams with lead and member details" }
+        }
+      },
+      "post": {
+        "tags": ["Teams"],
+        "summary": "Create a new support team (Requires Admin or Manager role)",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTeamRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Team created successfully" },
+          "403": { "description": "Insufficient permissions or cross-organization member assignment" }
+        }
+      }
+    },
+    "/analytics/admin": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Get organization administrator analytics dashboard metrics",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Aggregated metrics: user counts, open tickets, role breakdown, and SLA compliance" },
+          "403": { "description": "Requires 'admin' role" }
+        }
+      }
+    }
+  }
+}

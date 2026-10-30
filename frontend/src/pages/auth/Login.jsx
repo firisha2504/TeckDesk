@@ -155,15 +155,26 @@ export const Login = () => {
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              className="font-semibold text-blue-600 dark:text-cyan-400 hover:underline"
-            >
-              Create one
-            </Link>
-          </p>
+          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-navy-800 text-center space-y-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="font-semibold text-blue-600 dark:text-cyan-400 hover:underline"
+              >
+                Join an existing team
+              </Link>
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Need a workspace for your institution?{' '}
+              <Link
+                to="/register-organization"
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+              >
+                Register Organization
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

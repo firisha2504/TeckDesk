@@ -28,14 +28,20 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['employee', 'technician', 'manager', 'admin'],
+      enum: ['employee', 'technician', 'manager', 'admin', 'superadmin'],
       default: 'employee',
       index: true,
     },
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
-      required: [true, 'Organization is required'],
+      required: [
+        function () {
+          return this.role !== 'superadmin';
+        },
+        'Organization is required',
+      ],
+      default: null,
       index: true,
     },
     team: {
@@ -97,7 +103,7 @@ userSchema.methods.generateAuthToken = function () {
       id: this._id,
       email: this.email,
       role: this.role,
-      organization: this.organization,
+      organization: this.organization || null,
       name: this.name,
     },
     env.JWT_SECRET,

@@ -33,7 +33,7 @@ export const authenticate = async (req, res, next) => {
 
     // Fetch user from DB
     const user = await User.findById(decoded.id)
-      .populate('organization', 'name slug settings')
+      .populate('organization', 'name slug settings status plan')
       .populate('team', 'name specialties');
 
     if (!user) {
@@ -44,8 +44,32 @@ export const authenticate = async (req, res, next) => {
       return next(ApiError.forbidden('Your account has been deactivated. Please contact an administrator.'));
     }
 
+    // Check organization lifecycle status for tenant users
+    if (user.role !== 'superadmin' && user.organization) {
+      const orgStatus = user.organization.status;
+      if (orgStatus === 'suspended') {
+        return next(
+          ApiError.forbidden(
+            'Your organization has been suspended by the platform administrator. Access to services is revoked.'
+          )
+        );
+      }
+      if (orgStatus === 'pending') {
+        return next(
+          ApiError.forbidden(
+            'Your organization registration is pending review by the platform administrator.'
+          )
+        );
+      }
+      if (orgStatus === 'rejected') {
+        return next(
+          ApiError.forbidden('Your organization registration was rejected. Access is denied.')
+        );
+      }
+    }
+
     req.user = user;
-    req.organizationId = user.organization?._id || user.organization;
+    req.organizationId = user.organization?._id || user.organization || null;
     next();
   } catch (error) {
     next(error);

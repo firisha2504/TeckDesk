@@ -16,6 +16,8 @@ import slaRoutes from './routes/sla.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import organizationRoutes from './routes/organization.routes.js';
+import superadminRoutes from './routes/superadmin.routes.js';
+import attachmentRoutes from './routes/attachment.routes.js';
 
 const app = express();
 
@@ -55,8 +57,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(uploadDir));
+// Secure file access routes (authentication & organization isolation required)
+app.use('/uploads', apiLimiter, attachmentRoutes);
 
 // System Health Check endpoint
 app.get('/api/health', (req, res) => {
@@ -82,6 +84,8 @@ app.use('/api/sla', apiLimiter, slaRoutes);
 app.use('/api/analytics', apiLimiter, analyticsRoutes);
 app.use('/api/notifications', apiLimiter, notificationRoutes);
 app.use('/api/organizations', apiLimiter, organizationRoutes);
+app.use('/api/superadmin', apiLimiter, superadminRoutes);
+app.use('/api/attachments', apiLimiter, attachmentRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, res, next) => {

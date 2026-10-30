@@ -12,8 +12,8 @@ export const auditService = {
     req = null,
   }) => {
     try {
-      const ipAddress = req?.ip || req?.headers['x-forwarded-for'] || '';
-      const userAgent = req?.headers['user-agent'] || '';
+      const ipAddress = req?.ip || req?.headers?.['x-forwarded-for'] || '';
+      const userAgent = req?.headers?.['user-agent'] || '';
 
       await AuditLog.create({
         organization: organization || actor?.organization || null,

@@ -11,11 +11,32 @@ const getCookieOptions = () => ({
 });
 
 export const authController = {
+  registerOrganization: async (req, res, next) => {
+    try {
+      const result = await authService.registerOrganization(req.body, req);
+      res.status(201).json(ApiResponse.created(result, result.message));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  registerEmployee: async (req, res, next) => {
+    try {
+      const { user, token } = await authService.registerEmployee(req.body, req);
+      res.cookie('token', token, getCookieOptions());
+      res.status(201).json(ApiResponse.created({ user, token }, 'Employee registered successfully.'));
+    } catch (error) {
+      next(error);
+    }
+  },
+
   register: async (req, res, next) => {
     try {
-      const { user, token } = await authService.register(req.body, req);
-      res.cookie('token', token, getCookieOptions());
-      res.status(201).json(ApiResponse.created({ user, token }, 'User registered successfully.'));
+      const result = await authService.register(req.body, req);
+      if (result.token) {
+        res.cookie('token', result.token, getCookieOptions());
+      }
+      res.status(201).json(ApiResponse.created(result, result.message || 'Registered successfully.'));
     } catch (error) {
       next(error);
     }

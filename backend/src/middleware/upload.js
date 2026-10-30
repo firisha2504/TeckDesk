@@ -35,10 +35,40 @@ const fileFilter = (req, file, cb) => {
     'application/msword',
   ];
 
+  const allowedExtensions = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.webp',
+    '.gif',
+    '.pdf',
+    '.txt',
+    '.csv',
+    '.json',
+    '.zip',
+    '.docx',
+    '.doc',
+  ];
+
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!allowedExtensions.includes(ext)) {
+    return cb(
+      new ApiError(
+        400,
+        `File extension '${ext}' is not permitted. Allowed extensions: ${allowedExtensions.join(', ')}`
+      )
+    );
+  }
+
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new ApiError(400, `Unsupported file format (${file.mimetype}). Allowed formats: Images, PDF, TXT, CSV, DOC, ZIP`));
+    cb(
+      new ApiError(
+        400,
+        `Unsupported MIME format (${file.mimetype}). Allowed formats: Images, PDF, TXT, CSV, DOC, ZIP`
+      )
+    );
   }
 };
 

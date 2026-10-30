@@ -6,30 +6,36 @@ import { User } from '../src/models/User.js';
 import { Organization } from '../src/models/Organization.js';
 
 describe('Authentication API Tests', () => {
-  beforeAll(async () => {
-    await connectDatabase();
-  });
-
-  afterAll(async () => {
-    const org = await Organization.findOne({ name: testUser.organizationName });
-    if (org) {
-      await User.deleteMany({ organization: org._id });
-      await Organization.deleteOne({ _id: org._id });
-    }
-    await disconnectDatabase();
-  });
-
+  let testOrg = null;
   const testUser = {
     name: 'Test Auth User',
     email: `test_auth_${Date.now()}@techdesk.com`,
     password: 'Password123!',
     role: 'employee',
-    organizationName: 'Auth Test Org',
   };
+
+  beforeAll(async () => {
+    await connectDatabase();
+    testOrg = await Organization.create({
+      name: 'Auth Test Org',
+      slug: `auth-test-org-${Date.now()}`,
+      status: 'active',
+      settings: { allowRegistration: true },
+    });
+    testUser.organizationSlug = testOrg.slug;
+  });
+
+  afterAll(async () => {
+    if (testOrg) {
+      await User.deleteMany({ organization: testOrg._id });
+      await Organization.deleteOne({ _id: testOrg._id });
+    }
+    await disconnectDatabase();
+  });
 
   it('should successfully register a new user and return a JWT cookie', async () => {
     const res = await request(app)
-      .post('/api/auth/register')
+      .post('/api/auth/register-employee')
       .send(testUser);
 
     expect(res.status).toBe(201);
@@ -45,7 +51,7 @@ describe('Authentication API Tests', () => {
 
   it('should reject registration with invalid email', async () => {
     const res = await request(app)
-      .post('/api/auth/register')
+      .post('/api/auth/register-employee')
       .send({
         ...testUser,
         email: 'invalid-email-format',

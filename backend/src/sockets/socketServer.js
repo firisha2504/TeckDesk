@@ -1,8 +1,10 @@
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { User } from '../models/User.js';
+import { Ticket } from '../models/Ticket.js';
 
 let io = null;
 
@@ -30,22 +32,52 @@ export const initSocketServer = (httpServer) => {
         parseCookieToken(socket.handshake.headers?.cookie);
 
       if (!token) {
-        return next(new Error('Authentication required for WebSocket connection'));
+        return next(new Error('Authentication token required for WebSocket connection'));
       }
 
-      const decoded = jwt.verify(token, env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('_id name email role organization');
+      let decoded;
+      try {
+        decoded = jwt.verify(token, env.JWT_SECRET);
+      } catch (jwtErr) {
+        return next(new Error('Invalid or expired WebSocket authentication token'));
+      }
+
+      const user = await User.findById(decoded.id)
+        .select('_id name email role organization isActive')
+        .populate('organization', 'status');
 
       if (!user) {
-        return next(new Error('User not found'));
+        return next(new Error('User associated with token not found'));
       }
 
-      socket.user = user;
-      socket.orgId = user.organization.toString();
+      if (!user.isActive) {
+        return next(new Error('User account has been deactivated'));
+      }
+
+      // Check organization status for non-superadmin users
+      if (user.role === 'superadmin') {
+        socket.user = user;
+        socket.isSuperAdmin = true;
+        socket.orgId = null;
+      } else {
+        if (!user.organization) {
+          return next(new Error('No organization associated with this account'));
+        }
+
+        const orgStatus = user.organization.status;
+        if (orgStatus !== 'active' && orgStatus !== 'trial') {
+          return next(new Error(`WebSocket connection denied: Organization status is '${orgStatus}'`));
+        }
+
+        socket.user = user;
+        socket.isSuperAdmin = false;
+        socket.orgId = user.organization._id.toString();
+      }
+
       next();
     } catch (err) {
       logger.warn(`Socket authentication error: ${err.message}`);
-      next(new Error('Invalid token for WebSocket connection'));
+      next(new Error('WebSocket authentication failure'));
     }
   });
 
@@ -53,19 +85,60 @@ export const initSocketServer = (httpServer) => {
     const user = socket.user;
     logger.info(`WebSocket connected: ${user.name} (${user.email}) [Role: ${user.role}]`);
 
-    // Join user-specific room
+    // 1. Join user-specific personal room
     socket.join(`user:${user._id}`);
 
-    // Join organization-specific room
-    socket.join(`org:${socket.orgId}`);
+    // 2. Join organization-specific rooms
+    if (socket.isSuperAdmin) {
+      socket.join('platform:superadmin');
+    } else {
+      socket.join(`org:${socket.orgId}`);
+      socket.join(`role:${socket.orgId}:${user.role}`);
+    }
 
-    // Join role-specific room inside organization
-    socket.join(`role:${socket.orgId}:${user.role}`);
+    // 3. Secure ticket room subscription with organization & role validation
+    socket.on('ticket:join', async (ticketId, callback) => {
+      try {
+        if (!ticketId || !mongoose.Types.ObjectId.isValid(ticketId)) {
+          if (typeof callback === 'function') callback({ error: 'Invalid ticket ID format' });
+          return socket.emit('error', { message: 'Invalid ticket ID format' });
+        }
 
-    // Allow user to join specific ticket room for live collaboration
-    socket.on('ticket:join', (ticketId) => {
-      socket.join(`ticket:${ticketId}`);
-      logger.debug(`User ${user.name} joined room ticket:${ticketId}`);
+        const ticket = await Ticket.findById(ticketId).select('organization creator assignee');
+        if (!ticket) {
+          if (typeof callback === 'function') callback({ error: 'Ticket not found' });
+          return socket.emit('error', { message: 'Ticket not found' });
+        }
+
+        // Platform Super Admin is authorized across tickets
+        if (socket.isSuperAdmin) {
+          socket.join(`ticket:${ticketId}`);
+          logger.debug(`Super Admin joined room ticket:${ticketId}`);
+          if (typeof callback === 'function') callback({ success: true });
+          return;
+        }
+
+        // Validate organization boundary
+        if (!ticket.organization || ticket.organization.toString() !== socket.orgId) {
+          logger.warn(`Cross-tenant ticket join blocked: user ${user.email} from org ${socket.orgId} attempted ticket ${ticketId}`);
+          if (typeof callback === 'function') callback({ error: 'Unauthorized: Ticket belongs to a different organization' });
+          return socket.emit('error', { message: 'Unauthorized: Ticket belongs to a different organization' });
+        }
+
+        // Role check for employees: employees may only join tickets they created
+        if (user.role === 'employee' && ticket.creator.toString() !== user._id.toString()) {
+          logger.warn(`Employee ticket join blocked: employee ${user.email} attempted non-owned ticket ${ticketId}`);
+          if (typeof callback === 'function') callback({ error: 'Unauthorized: Employees may only view their own tickets' });
+          return socket.emit('error', { message: 'Unauthorized: Employees may only view their own tickets' });
+        }
+
+        socket.join(`ticket:${ticketId}`);
+        logger.debug(`User ${user.name} joined room ticket:${ticketId}`);
+        if (typeof callback === 'function') callback({ success: true });
+      } catch (err) {
+        logger.error(`Error in ticket:join socket handler: ${err.message}`);
+        if (typeof callback === 'function') callback({ error: 'Internal server error joining ticket' });
+      }
     });
 
     socket.on('ticket:leave', (ticketId) => {
@@ -94,22 +167,22 @@ export const getIO = () => {
 
 export const socketEmitter = {
   emitToUser: (userId, event, data) => {
-    if (io) {
+    if (io && userId) {
       io.to(`user:${userId}`).emit(event, data);
     }
   },
   emitToOrg: (orgId, event, data) => {
-    if (io) {
+    if (io && orgId) {
       io.to(`org:${orgId}`).emit(event, data);
     }
   },
   emitToTicket: (ticketId, event, data) => {
-    if (io) {
+    if (io && ticketId) {
       io.to(`ticket:${ticketId}`).emit(event, data);
     }
   },
   emitToRole: (orgId, role, event, data) => {
-    if (io) {
+    if (io && orgId && role) {
       io.to(`role:${orgId}:${role}`).emit(event, data);
     }
   },

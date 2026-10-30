@@ -1,215 +1,218 @@
 # TechDesk: Smart IT Support and Incident Management System
 
-> **Better Support • Faster Resolution • Happier Teams**  
-> Enterprise MERN Stack IT Support & Incident Management Platform with real-time Socket.IO collaboration, automated SLA deadline monitoring, skill & workload-based technician auto-routing, and multi-tenant Role-Based Access Control.
+TechDesk is an enterprise-grade, multi-organization IT service management and incident tracking platform built on the modern MERN stack. Designed for educational institutions, healthcare networks, corporations, and government agencies, TechDesk enables multiple independent institutions to operate securely on a single platform with strict logical tenant isolation, automated SLA tracking, real-time WebSocket communication, and dual-tier administration.
 
 ---
 
-## 🌟 Key Features
+## Key Highlights
 
-- **4 Role-Specific Dashboards**:
-  - **Employee**: Track personal tickets, view SLA progress, submit new issues with attachments.
-  - **Technician**: Active assigned incident queue ranked by SLA deadline, workload metrics, and internal diagnostic notes.
-  - **Manager**: Department-wide incident volume, priority breakdown donut chart, team performance tracking table, and SLA compliance.
-  - **Administrator**: User account roles, multi-tenant organization settings, category routing, and immutable security audit logs.
-- **Automated SLA Engine & Escalation**:
-  - Deterministic response and resolution deadlines computed dynamically based on priority (Critical: 15m response / 2h resolution; High: 1h response / 8h resolution).
-  - Background worker scanning every 60 seconds with automated escalation for overdue critical incidents.
-- **Intelligent Auto-Assignment**:
-  - Analyzes category skills, team specialties, and current active technician workload to auto-route incoming tickets.
-- **Real-Time Collaboration (Socket.IO)**:
-  - Live ticket updates, comment streams, status changes, and in-app push notification alerts with room-scoped security.
-- **Enterprise Aesthetics**:
-  - Dark navy (`#0B132B`, `#0F172A`) and crisp light themes with responsive mobile navigation dock, glowing cyan/blue primary accents, and Recharts interactive graphs.
-- **Public Experience & Corporate Governance**:
-  - Landing page (`/`), Deep-dive features page (`/features`), Mission & methodology (`/about`), Client-validated contact inquiry portal (`/contact`), Structured data privacy policy (`/privacy`), and Platform terms & conditions (`/terms`).
-- **Robust Security**:
-  - HTTP-only cookie JWT auth, bcrypt password hashing (10 rounds), Zod payload validation, Helmet security headers, rate limiting, and NoSQL injection sanitization.
+- **Multi-Tenant Architecture**: Shared database with tenant-isolated collections. Users, tickets, teams, comments, and attachments are strictly scoped to their respective organization.
+- **Dual-Tier Administration**:
+  - **Platform Super Admin**: Oversees platform health, approves/rejects new institution registrations, suspends/reactivates organizations, and inspects cross-platform audit trails.
+  - **Organization Admin**: Configures localized business hours, staff roles, departments, teams, and SLA targets.
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions across 5 roles: `superadmin`, `admin`, `manager`, `technician`, and `employee`.
+- **Intelligent SLA Management**: Real-time response and resolution deadline calculation with background breach scanning via BullMQ/Redis and automated escalations.
+- **Real-Time WebSockets**: Socket.IO authenticated channels for instant status updates, comment synchronization, and notification delivery with room-level tenant isolation.
+- **Defense-in-Depth Security**: JWT authentication (HttpOnly cookies or Bearer headers), bcrypt password hashing (cost 10), NoSQL injection protection, rate limiting, and attachment MIME/extension whitelisting.
 
 ---
 
-## 🚀 Tech Stack
+## Technology Stack
 
-- **Frontend**: React 18, Vite, React Router 6, Tailwind CSS, Lucide Icons, Recharts.
-- **Backend**: Node.js (v24 ES Modules), Express.js.
-- **Database**: MongoDB 7.0 & Mongoose 8.x.
-- **Real-Time**: Socket.IO 4.x.
-- **Background Jobs**: BullMQ 5.x & Redis with persistent fallback scheduler.
-- **Testing**: Vitest & Supertest.
-- **DevOps**: Docker, Docker Compose, Nginx.
+- **Backend**: Node.js 20+, Express 4, Mongoose 8, Socket.IO 4, BullMQ 5 / ioredis 5, Zod 3, Winston logger
+- **Frontend**: React 18, Vite 6, TailwindCSS 3, Lucide React icons, Axios
+- **Databases & Queues**: MongoDB 7.0+, Redis 7.2+
+- **DevOps**: Docker, Docker Compose, Nginx reverse proxy
 
 ---
 
-## 🔑 User Authentication & Account Access
+## System Prerequisites
 
-TechDesk supports role-based access control (RBAC) across four core user tiers:
-- **Employee**: Incident creation, ticket tracking, and direct technician messaging.
-- **Technician**: Workload assignment queue, incident triage, SLA countdown monitoring, and resolution workflows.
-- **Manager**: Departmental throughput oversight, team assignments, SLA policy configuration, and CSV analytics export.
-- **Administrator**: Tenant governance, organization role provisioning, user management, and audit log inspection.
+Before running TechDesk locally or in production, ensure the following are installed:
 
-New users can register directly via the registration portal (`/register`). Manager and Administrator roles are provisioned by an organization administrator through the User Management panel (`/users`).
+- **Node.js**: `v20.x` or `v22.x` (LTS recommended)
+- **npm**: `v10.x` or higher
+- **MongoDB**: `v7.0+` (local community edition, Docker container, or MongoDB Atlas replica set)
+- **Redis**: `v7.2+` (required in production for BullMQ background SLA queues)
 
 ---
 
-## ⚡ Quick Start
+## Installation & Setup
 
-### Option A: Local Development
+### 1. Clone Repository & Install Dependencies
 
-#### 1. Start MongoDB & Initialize Workspace
 ```bash
-# Start local MongoDB daemon
-mkdir -p backend/data/db
-mongod --dbpath backend/data/db --port 27017 --bind_ip 127.0.0.1 --logpath backend/data/mongod.log --fork
+# Clone the repository
+git clone https://github.com/your-org/techdesk.git
+cd techdesk
 
-# Seed the database
-npm run seed --prefix backend
+# Install root dependencies
+npm install
+
+# Install backend dependencies
+cd backend && npm install && cd ..
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
 ```
 
-#### 2. Start Backend & Frontend Concurrently
-```bash
-# Start both backend (port 5000) and frontend (port 5173)
-npm run dev
-```
-
-- Web Application: `http://localhost:5173`
-- Backend API: `http://localhost:5000/api`
-- Healthcheck: `http://localhost:5000/api/health`
-
 ---
 
-### Option B: Docker Compose (Production Environment)
+### 2. Environment Configuration
 
-Docker Compose provisions the complete stack including MongoDB 7.0, Redis 7.2 (with health checks), the Express.js Backend API, and the Nginx-hosted production Frontend bundle.
+#### Backend Configuration (`backend/.env`)
+
+Copy `backend/.env.example` to `backend/.env` and configure appropriate values for your environment:
 
 ```bash
-# 1. Copy environment template
 cp backend/.env.example backend/.env
+```
 
-# 2. Configure production secrets in backend/.env (JWT_SECRET, SMTP credentials, etc.)
+| Variable | Description | Example / Recommended Value |
+|---|---|---|
+| `PORT` | API server listen port | `5000` |
+| `NODE_ENV` | Environment mode (`development` or `production`) | `development` |
+| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/techdesk` |
+| `REDIS_URL` | Redis connection URI for BullMQ queues | `redis://localhost:6379` |
+| `JWT_SECRET` | Secret key for signing JWT tokens (min 32 characters) | `your_secure_random_jwt_secret_here` |
+| `JWT_EXPIRES_IN` | Token expiration duration | `7d` |
+| `FRONTEND_URL` | Client origin for CORS and redirects | `http://localhost:5173` |
+| `UPLOAD_DIR` | Directory on disk for uploaded attachments | `uploads` |
+| `ENABLE_DEV_JOB_SCHEDULER` | Fallback interval in dev when Redis is absent | `true` |
+| `INITIAL_ADMIN_PASSWORD` | Fallback initial seed password | `your_initial_admin_password_here` |
+| `SMTP_HOST` | Outgoing SMTP mail server | `smtp.example.com` |
+| `SMTP_PORT` | SMTP server port | `587` |
+| `SMTP_USER` | SMTP username | `support@example.com` |
+| `SMTP_PASS` | SMTP password | `your_smtp_password_here` |
+| `SMTP_FROM` | Outgoing sender header | `TechDesk Support <no-reply@techdesk.com>` |
 
-# 3. Launch the container cluster
+> **Security Note**: Never commit `.env` or production credentials to version control. Always generate cryptographically secure secrets in production (`openssl rand -hex 32`).
+
+#### Frontend Configuration (`frontend/.env`)
+
+Copy `frontend/.env.example` to `frontend/.env`:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+```ini
+VITE_API_URL=/api
+VITE_SOCKET_URL=/
+```
+
+---
+
+## Provisioning & Initialization
+
+### 1. Provision Platform Super Admin
+
+Create the primary Platform Super Admin account using the provisioner script:
+
+```bash
+cd backend
+SUPERADMIN_EMAIL="superadmin@techdesk.com" \
+SUPERADMIN_PASSWORD="YourSecurePasswordHere!" \
+SUPERADMIN_NAME="Platform Administrator" \
+node scripts/provision-superadmin.js
+```
+
+### 2. Seed Initial Demonstration Data (Optional)
+
+To seed a default tenant with sample tickets and staff accounts:
+
+```bash
+cd backend
+node scripts/seed.js
+```
+
+---
+
+## Running the Application
+
+### Development Mode
+
+#### Running Services with npm (Local Dev Servers)
+
+```bash
+# Terminal 1: Start Backend API (runs nodemon on port 5000)
+cd backend && npm run dev
+
+# Terminal 2: Start Frontend App (runs Vite dev server on port 5173)
+cd frontend && npm run dev
+```
+
+Visit the application at `http://localhost:5173`.
+
+---
+
+### Production Deployment via Docker Compose
+
+TechDesk includes a production-ready `docker-compose.yml` that provisions MongoDB, Redis, Backend (Node.js), and Frontend (Nginx):
+
+```bash
+# Build and start all services in detached mode
 docker compose up -d --build
 
-# 4. Populate seed data in the backend container
-docker compose exec backend node scripts/seed.js
+# Inspect running containers
+docker compose ps
+
+# View backend application logs
+docker compose logs -f backend
 ```
 
 ---
 
-## ⚙️ Configuration & Environment Variables
+## Institution Registration & Approval Workflow
 
-Create a `backend/.env` file based on `backend/.env.example`.
-
-### Core Server & Security
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `PORT` | `5000` | HTTP port for Express backend |
-| `NODE_ENV` | `development` | Environment mode (`development`, `production`, `test`) |
-| `FRONTEND_URL` | `http://localhost:5173` | Allowed CORS origin and password reset base URL |
-| `MONGODB_URI` | `mongodb://localhost:27017/techdesk` | MongoDB connection URI (Required) |
-| `JWT_SECRET` | *(Random 32+ char string)* | Cryptographic key for signing JWTs (Strictly validated in production) |
-| `JWT_EXPIRES_IN` | `7d` | Token expiration period |
-| `UPLOAD_DIR` | `uploads` | Local directory for storing ticket attachments |
-
-### Redis & SLA Job Queues (BullMQ)
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `REDIS_URL` | `redis://localhost:6379` | Redis connection URL for BullMQ persistent queues |
-| `ENABLE_DEV_JOB_SCHEDULER` | `true` | Enables in-process timer fallback **ONLY** in development if Redis is unreachable. **Strictly disabled in production** to prevent silent job loss. |
-
-> **Production Redis Guard**: When `NODE_ENV=production`, TechDesk strictly requires a healthy Redis connection. If Redis cannot be reached, the server rejects startup and will not fall back to an in-memory timer, ensuring SLA jobs and retries are never lost across restarts.
-
-### SMTP Email Delivery (Password Reset)
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `SMTP_HOST` | *(empty)* | SMTP server hostname (e.g. `smtp.sendgrid.net`, `email-smtp.us-east-1.amazonaws.com`, `sandbox.smtp.mailtrap.io`) |
-| `SMTP_PORT` | `587` | SMTP port (`587` for STARTTLS, `465` for SSL/TLS) |
-| `SMTP_SECURE` | `false` | Set to `true` if connecting over port 465 |
-| `SMTP_USER` | *(empty)* | SMTP username / API key |
-| `SMTP_PASS` | *(empty)* | SMTP password / API secret |
-| `SMTP_FROM` | `TechDesk Support <no-reply@techdesk.com>` | Sender address on outbound emails |
-
-> **Password Reset Security & Safe Delivery Notice**:
-> - Password reset tokens are never returned in API responses and are never written to audit logs or console output.
-> - Only SHA-256 token hashes are stored in the database with a 1-hour expiration window.
-> - Single-use enforcement guarantees tokens cannot be replayed after a password is updated.
-> - All password reset requests return an identical generic response to defend against user enumeration attacks.
-> - If `SMTP_HOST` is not configured, the system logs a safe warning and suppresses outbound delivery without exposing the token.
-> - *Delivery verification note*: Actual delivery to external inboxes requires valid SMTP server credentials.
+1. **Public Self-Registration**:
+   - An institution representative navigates to `http://localhost:5173/register-organization`.
+   - Submits organization details (Name, Domain, Industry Type, Contact) and initial Admin credentials.
+   - The organization is created in **`pending`** status.
+2. **Review & Approval**:
+   - Platform Super Admin logs in at `http://localhost:5173/login`.
+   - Navigates to **Registration Requests** in the Platform Admin navigation.
+   - Reviews registration details and clicks **Approve** (or **Reject** with a reason).
+3. **Workspace Activation**:
+   - Upon approval, status transitions to **`active`**.
+   - The organization administrator can immediately log in, invite staff, configure teams, and manage support tickets.
 
 ---
 
-## 🧪 Automated Testing & Verification
+## Testing & Verification
 
-TechDesk includes comprehensive automated unit, integration, and security test suites using Vitest and Supertest.
+TechDesk includes comprehensive test harnesses covering unit, integration, multi-tenant isolation, and end-to-end security:
 
 ```bash
-# Run backend test suite (Auth, Permissions, Tickets, SLA, Password Reset Security, Queue Production Guards)
-npm test --prefix backend
+# Run Vitest Unit & Integration Suites (6 suites, 25 tests)
+cd backend && npm test
 
-# Run E2E system health & service verification
-npm run test:e2e
+# Run End-to-End Multi-Tenant Security Suite (39 tests)
+node backend/scripts/test-step8-e2e.js
 
-# Run frontend production build
-npm run build --prefix frontend
-```
-
-### Verified Test Results
-
-#### 1. Backend Test Suite (`npm test --prefix backend`)
-```
- ✓ tests/queue.test.js (4 tests)
-   ✓ Redis & SLA Background Job Queue Tests > should strictly reject and fail startup in production if Redis is unreachable (preventing silent job loss)
-   ✓ Redis & SLA Background Job Queue Tests > should NOT run in-memory fallback in development if ENABLE_DEV_JOB_SCHEDULER is false
-   ✓ Redis & SLA Background Job Queue Tests > should run in-memory fallback in development ONLY when ENABLE_DEV_JOB_SCHEDULER is explicitly true
-   ✓ Redis & SLA Background Job Queue Tests > should shut down gracefully and stop all intervals and connections
- ✓ tests/sla.test.js (2 tests)
- ✓ tests/permissions.test.js (3 tests)
- ✓ tests/tickets.test.js (4 tests)
- ✓ tests/passwordReset.test.js (7 tests)
-   ✓ Password Reset Security & SMTP Tests > should return identical generic response whether user exists or not, and NEVER expose resetToken in response
-   ✓ Password Reset Security & SMTP Tests > should store ONLY hashed reset token in database and have future expiration
-   ✓ Password Reset Security & SMTP Tests > should NEVER write reset token or token-bearing URL to audit logs
-   ✓ Password Reset Security & SMTP Tests > should reject unauthorized / tampered password reset tokens
-   ✓ Password Reset Security & SMTP Tests > should reject password reset when token has expired
-   ✓ Password Reset Security & SMTP Tests > should successfully reset password with valid token, and enforce single-use (reject reuse)
-   ✓ Password Reset Security & SMTP Tests > should fail safely without crashing or exposing tokens if SMTP is unconfigured
- ✓ tests/auth.test.js (5 tests)
-
-Test Files:  6 passed (6)
-Tests:       25 passed (25)
-Duration:    4.54s
-```
-
-#### 2. End-to-End Workflow Verification (`npm run test:e2e`)
-```
- ✓ tests/e2e/workflow.test.js (2 tests)
-   ✓ TechDesk E2E System Health & Workflow Verification > should verify backend service is reachable on port 5000
-   ✓ TechDesk E2E System Health & Workflow Verification > should verify frontend service is serving on port 5173
-
-Test Files:  1 passed (1)
-Tests:       2 passed (2)
-Duration:    0.92s
-```
-
-#### 3. Frontend Production Build (`npm run build --prefix frontend`)
-```
-✓ 2,303 modules transformed.
-dist/index.html                   1.12 kB │ gzip:   0.62 kB
-dist/assets/index-CHhHUilQ.css   43.48 kB │ gzip:   7.73 kB
-dist/assets/index-Bt8SIaJ3.js   804.14 kB │ gzip: 219.48 kB
-✓ built in 10.34s with zero compilation errors.
+# Run Frontend Production Build Check
+cd frontend && npm run build
 ```
 
 ---
 
-## 📚 Technical Documentation
+## Project Documentation Index
 
-- [System Architecture](file:///home/firo2504/Desktop/TechDesk/docs/architecture.md)
-- [REST API Reference](file:///home/firo2504/Desktop/TechDesk/docs/api.md)
-- [Database Schema & Data Dictionary](file:///home/firo2504/Desktop/TechDesk/docs/database.md)
-- [Role Permissions & RBAC Matrix](file:///home/firo2504/Desktop/TechDesk/docs/permissions.md)
-- [Production Deployment Guide](file:///home/firo2504/Desktop/TechDesk/docs/deployment.md)
-- [Implementation Progress Tracker](file:///home/firo2504/Desktop/TechDesk/docs/PROGRESS.md)
+Detailed engineering documentation is available across dedicated guides:
 
+- [System Architecture](file:///home/firo2504/Desktop/TechDesk/ARCHITECTURE.md): Multi-tenant isolation, request lifecycle, and WebSocket architecture.
+- [REST API Reference](file:///home/firo2504/Desktop/TechDesk/API_DOCUMENTATION.md): Endpoint catalog, authentication, request/response payloads.
+- [OpenAPI Specification](file:///home/firo2504/Desktop/TechDesk/openapi.json): Standard OpenAPI 3.0 JSON specification.
+- [Database Schema & Models](file:///home/firo2504/Desktop/TechDesk/DATABASE_DOCUMENTATION.md): MongoDB collections, schema schemas, compound indexes, and relations.
+- [Security Architecture](file:///home/firo2504/Desktop/TechDesk/SECURITY.md): RBAC, IDOR defense, path traversal prevention, and audit logs.
+- [Deployment Runbook](file:///home/firo2504/Desktop/TechDesk/DEPLOYMENT.md): Docker, Nginx SSL, cloud staging, and scaling.
+- [Backup and Recovery](file:///home/firo2504/Desktop/TechDesk/BACKUP_AND_RESTORE.md): Database backup, verification, and non-destructive restoration protocols.
+- [User Guide](file:///home/firo2504/Desktop/TechDesk/USER_GUIDE.md): Practical instructions for Employees and Technicians.
+- [Administrator Guide](file:///home/firo2504/Desktop/TechDesk/ADMIN_GUIDE.md): Operational manual for Super Admins, Org Admins, and Managers.
+- [Production Readiness Audit](file:///home/firo2504/Desktop/TechDesk/PRODUCTION_READINESS_REPORT.md): Security and operational audit findings.
+
+---
+
+## License
+
+This project is licensed under the MIT License.

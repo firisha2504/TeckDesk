@@ -15,6 +15,8 @@ import {
   X,
   Headphones,
   CheckCircle2,
+  Building2,
+  UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { ROLES } from '../../utils/constants.js';
@@ -24,6 +26,15 @@ export const Sidebar = ({ isOpen, onClose }) => {
   const role = user?.role || 'employee';
 
   const navItems = {
+    superadmin: [
+      { to: '/superadmin/dashboard', label: 'Platform Overview', icon: LayoutDashboard },
+      { to: '/superadmin/organizations', label: 'Organizations', icon: Building2 },
+      { to: '/superadmin/requests', label: 'Registration Requests', icon: UserCheck },
+      { to: '/superadmin/audit-logs', label: 'Global Audit Logs', icon: FileText },
+      { to: '/superadmin/settings', label: 'Platform Settings', icon: Sliders },
+      { to: '/settings/profile', label: 'Profile', icon: Users },
+      { to: '/settings/appearance', label: 'Settings', icon: Settings },
+    ],
     employee: [
       { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/tickets/my', label: 'My Tickets', icon: Ticket },

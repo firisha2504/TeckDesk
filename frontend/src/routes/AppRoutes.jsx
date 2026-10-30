@@ -16,8 +16,17 @@ import { Terms } from '../pages/public/Terms.jsx';
 // Auth Pages
 import { Login } from '../pages/auth/Login.jsx';
 import { Register } from '../pages/auth/Register.jsx';
+import { RegisterOrganization } from '../pages/auth/RegisterOrganization.jsx';
 import { ForgotPassword } from '../pages/auth/ForgotPassword.jsx';
 import { ResetPassword } from '../pages/auth/ResetPassword.jsx';
+
+// Super Admin Pages
+import { SuperAdminDashboard } from '../pages/superadmin/SuperAdminDashboard.jsx';
+import { OrganizationList } from '../pages/superadmin/OrganizationList.jsx';
+import { OrganizationDetail } from '../pages/superadmin/OrganizationDetail.jsx';
+import { RegistrationRequests } from '../pages/superadmin/RegistrationRequests.jsx';
+import { GlobalAuditLogs } from '../pages/superadmin/GlobalAuditLogs.jsx';
+import { PlatformSettings } from '../pages/superadmin/PlatformSettings.jsx';
 
 // Role Dashboards
 import { EmployeeDashboard } from '../pages/employee/EmployeeDashboard.jsx';
@@ -88,6 +97,8 @@ const DashboardDispatcher = () => {
   const { user } = useAuth();
 
   switch (user?.role) {
+    case 'superadmin':
+      return <SuperAdminDashboard />;
     case 'admin':
       return <AdminDashboard />;
     case 'manager':
@@ -116,6 +127,7 @@ export const AppRoutes = () => {
       {/* 2. Public Authentication Pages */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/register-organization" element={<RegisterOrganization />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unauthorized" element={<AccessDenied />} />
@@ -131,6 +143,56 @@ export const AppRoutes = () => {
       >
         {/* Dynamic Role Dashboard */}
         <Route path="/dashboard" element={<DashboardDispatcher />} />
+
+        {/* Section 5: Platform Super Admin Administration Pages */}
+        <Route
+          path="/superadmin/dashboard"
+          element={
+            <RoleRoute allowedRoles={['superadmin']}>
+              <SuperAdminDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/superadmin/organizations"
+          element={
+            <RoleRoute allowedRoles={['superadmin']}>
+              <OrganizationList />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/superadmin/organizations/:id"
+          element={
+            <RoleRoute allowedRoles={['superadmin']}>
+              <OrganizationDetail />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/superadmin/requests"
+          element={
+            <RoleRoute allowedRoles={['superadmin']}>
+              <RegistrationRequests />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/superadmin/audit-logs"
+          element={
+            <RoleRoute allowedRoles={['superadmin']}>
+              <GlobalAuditLogs />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/superadmin/settings"
+          element={
+            <RoleRoute allowedRoles={['superadmin']}>
+              <PlatformSettings />
+            </RoleRoute>
+          }
+        />
 
         {/* Section 6: Employee Pages */}
         <Route

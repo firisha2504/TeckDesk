@@ -4,6 +4,8 @@ import { authenticate } from '../middleware/authenticate.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import {
+  registerOrganizationSchema,
+  registerEmployeeSchema,
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
@@ -12,6 +14,18 @@ import {
 
 const router = express.Router();
 
+router.post(
+  '/register-organization',
+  authLimiter,
+  validateRequest(registerOrganizationSchema),
+  authController.registerOrganization
+);
+router.post(
+  '/register-employee',
+  authLimiter,
+  validateRequest(registerEmployeeSchema),
+  authController.registerEmployee
+);
 router.post('/register', authLimiter, validateRequest(registerSchema), authController.register);
 router.post('/login', authLimiter, validateRequest(loginSchema), authController.login);
 router.post('/logout', authenticate, authController.logout);

@@ -7,6 +7,10 @@ import { User } from '../src/models/User.js';
 import { Ticket } from '../src/models/Ticket.js';
 
 describe('Permissions & Tenant Isolation API Tests', () => {
+  let orgA = null;
+  let orgB = null;
+  let userA = null;
+  let userB = null;
   let orgAToken = '';
   let orgBToken = '';
   let orgATicketId = '';
@@ -14,46 +18,52 @@ describe('Permissions & Tenant Isolation API Tests', () => {
   beforeAll(async () => {
     await connectDatabase();
 
-    // Org A user
-    const userARes = await request(app)
-      .post('/api/auth/register')
-      .send({
-        name: 'Org A User',
-        email: `orga_${Date.now()}@alpha.com`,
-        password: 'Password123!',
-        role: 'employee',
-        organizationName: 'Alpha Corporation',
-      });
-    orgAToken = userARes.body.data.token;
+    orgA = await Organization.create({
+      name: 'Alpha Corporation',
+      slug: `alpha-${Date.now()}`,
+      status: 'active',
+    });
+    userA = await User.create({
+      name: 'Org A User',
+      email: `orga_${Date.now()}@alpha.com`,
+      password: 'Password123!',
+      role: 'employee',
+      organization: orgA._id,
+      isActive: true,
+    });
+    orgAToken = userA.generateAuthToken();
 
-    // Org B user
-    const userBRes = await request(app)
-      .post('/api/auth/register')
-      .send({
-        name: 'Org B User',
-        email: `orgb_${Date.now()}@beta.com`,
-        password: 'Password123!',
-        role: 'employee',
-        organizationName: 'Beta Enterprises',
-      });
-    orgBToken = userBRes.body.data.token;
+    orgB = await Organization.create({
+      name: 'Beta Enterprises',
+      slug: `beta-${Date.now()}`,
+      status: 'active',
+    });
+    userB = await User.create({
+      name: 'Org B User',
+      email: `orgb_${Date.now()}@beta.com`,
+      password: 'Password123!',
+      role: 'employee',
+      organization: orgB._id,
+      isActive: true,
+    });
+    orgBToken = userB.generateAuthToken();
 
     // Create ticket in Org A
-    const ticketRes = await request(app)
-      .post('/api/tickets')
-      .set('Authorization', `Bearer ${orgAToken}`)
-      .send({
-        title: 'Confidential Internal Server Access',
-        category: 'Security',
-        priority: 'Critical',
-        description: 'Server credentials and access token issue for Org A only.',
-      });
-    orgATicketId = ticketRes.body.data._id;
+    const ticket = await Ticket.create({
+      ticketNumber: `ALPHA-${Date.now()}`,
+      title: 'Confidential Internal Server Access',
+      category: 'Security',
+      priority: 'Critical',
+      description: 'Server credentials and access token issue for Org A only.',
+      creator: userA._id,
+      organization: orgA._id,
+      status: 'Open',
+    });
+    orgATicketId = ticket._id.toString();
   });
 
   afterAll(async () => {
-    const orgs = await Organization.find({ name: { $in: ['Alpha Corporation', 'Beta Enterprises'] } });
-    const orgIds = orgs.map((o) => o._id);
+    const orgIds = [orgA?._id, orgB?._id].filter(Boolean);
     if (orgIds.length > 0) {
       await User.deleteMany({ organization: { $in: orgIds } });
       await Ticket.deleteMany({ organization: { $in: orgIds } });

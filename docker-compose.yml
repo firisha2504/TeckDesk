@@ -42,7 +42,7 @@ services:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/techdesk
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=techdesk_production_grade_secret_key_2026
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in environment}
       - JWT_EXPIRES_IN=7d
       - FRONTEND_URL=http://localhost:5173
       - UPLOAD_DIR=uploads

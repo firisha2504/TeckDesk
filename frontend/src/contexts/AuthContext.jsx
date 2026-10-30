@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }) => {
         refreshUser: fetchCurrentUser,
         isAuthenticated: !!user,
         role: user?.role,
+        isSuperAdmin: user?.role === 'superadmin',
       }}
     >
       {children}
